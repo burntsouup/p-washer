@@ -18,9 +18,11 @@ in plain JS anyway. Pure logic files use `// @ts-check` + JSDoc comments to catc
 ## 3. No physics engine in v0.1
 
 **Why:** Walking on a flat yard and bumping into walls works with Babylon's built-in collisions
-(`moveWithCollisions`). The spray is a raycast, not physics. **Revisit when:** we need dynamic
-objects. Then prefer Babylon's Havok plugin (`@babylonjs/havok`, MIT) over Rapier because it
-integrates directly and includes a character controller.
+(`moveWithCollisions`). The feet are simply pinned to the ground each frame instead of
+simulating gravity, since v0.1 has no slopes, stairs, or jumping. The spray is a raycast, not
+physics. **Revisit when:** we need dynamic objects or uneven ground. Then prefer Babylon's Havok
+plugin (`@babylonjs/havok`, MIT) over Rapier because it integrates directly and includes a
+character controller.
 
 ## 4. Dirt is a CPU-side grid in UV space
 

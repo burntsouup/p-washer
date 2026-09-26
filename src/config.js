@@ -43,5 +43,10 @@ export const config = {
   player: {
     height: 1.8,
     radius: 0.35,
+    walkSpeed: 3.5, // meters per second
+    runSpeed: 6.5, // while holding Shift
+    acceleration: 30, // m/s²: reaches walking speed in ~0.1 s. Lower feels heavier.
+    deceleration: 40, // m/s²: how hard you brake when letting go of the keys
+    turnSpeed: 14, // how quickly the body turns to face the direction of travel
   },
 };

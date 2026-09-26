@@ -30,13 +30,10 @@ export class Game {
     createSky(this.scene);
     this.level = createBackyard(this.scene, shadows);
 
-    this.player = new Player(this.scene, shadows, this.level.spawn);
+    this.player = new Player(this.scene, shadows, this.input, this.level.spawn);
     this.camera = new ThirdPersonCamera(this.scene, this.input, this.player, this.level.spawn.yaw);
     this.hud = new Hud(hudRoot, this.input);
     this.debugOverlay = new DebugOverlay(this.engine, this.scene, hudRoot);
-
-    // Update order matters: later systems read what earlier ones produced this frame.
-    this.systems = [this.camera, this.hud, this.debugOverlay];
 
     window.addEventListener('resize', () => this.engine.resize());
   }
@@ -44,9 +41,21 @@ export class Game {
   start() {
     this.engine.runRenderLoop(() => {
       const dt = toDeltaSeconds(this.engine.getDeltaTime(), config.loop.maxDeltaSeconds);
-      for (const system of this.systems) system.update(dt);
+      this.update(dt);
       this.input.endFrame();
       this.scene.render();
     });
+  }
+
+  /**
+   * Updates every system once. Order matters: each step uses what the previous ones did.
+   *
+   * @param {number} dt Seconds since the previous frame.
+   */
+  update(dt) {
+    this.player.update(dt, this.camera.yaw); // move relative to where the camera looks
+    this.camera.update(dt); // then follow the player to their new position
+    this.hud.update();
+    this.debugOverlay.update(dt);
   }
 }

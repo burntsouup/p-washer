@@ -32,11 +32,13 @@ washing the driveway should feel good. See the success checklist at the bottom.
 - [x] Capsule player with a visor showing its facing (standing still for now)
 - [x] Tests: camera orbit math
 
-### 4. Player movement
+### 4. Player movement ✅
 
-- [ ] WASD relative to the camera, `Shift` to run, smooth acceleration/deceleration
-- [ ] Turns toward movement direction; gravity; collides with walls and props
-- [ ] Tests: camera-relative direction, no diagonal speed boost, acceleration curve
+- [x] WASD relative to the camera, `Shift` to run, smooth acceleration/deceleration
+- [x] Turns toward movement direction; collides with walls and props; invisible walls at the
+      edge of the lot
+- [x] Feet stay on the ground (the yard is flat, so no gravity or jumping needed yet)
+- [x] Tests: camera-relative direction, no diagonal speed boost, acceleration curve
 
 ### 5. Dirt mask core (pure JS, test-first)
 
