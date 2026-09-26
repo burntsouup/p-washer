@@ -12,9 +12,13 @@ JavaScript.
 
 | Input         | Action                                         |
 | ------------- | ---------------------------------------------- |
-| Drag mouse    | Orbit the camera (temporary)                   |
+| Left-drag     | Orbit the camera (temporary)                   |
+| Right-drag    | Pan the camera                                 |
 | Scroll        | Zoom                                           |
 | `` ` `` (key) | Toggle the Babylon Inspector (dev builds only) |
+
+**Dev tip:** in dev builds, type `game` in the browser console to inspect the running game,
+e.g. `game.scene.meshes`.
 
 ## Run it locally
 
@@ -42,7 +46,7 @@ src/
   main.js              Entry point: creates the Game
   config.js            Every tunable number lives here
   game/                Game loop and shared helpers
-  environment/         The level (placeholder geometry)
+  environment/         The level: layout (Backyard.js), lighting + sky, greybox shape kit
   ui/                  HTML overlay (FPS, later HUD)
 docs/
   ROADMAP.md           Milestones and checklists (our plan)

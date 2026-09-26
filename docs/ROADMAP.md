@@ -17,11 +17,11 @@ washing the driveway should feel good. See the success checklist at the bottom.
 - [x] CI (lint, format, test, build) on every PR; deploy to GitHub Pages on merge to `main`
 - [x] README, decisions log, credits, PR template, Dependabot
 
-### 2. Greybox backyard
+### 2. Greybox backyard ✅
 
-- [ ] House block, driveway, lawn, fence, a few obstacles (placeholder geometry only)
-- [ ] Driveway is its own ground mesh with clean, unique UVs (it becomes the cleanable surface)
-- [ ] Lighting and shadows look pleasant enough to spend time in
+- [x] House block, driveway, lawn, fence, a few obstacles (placeholder geometry only)
+- [x] Driveway is its own ground mesh with clean, unique UVs (it becomes the cleanable surface)
+- [x] Lighting and shadows look pleasant enough to spend time in (sky gradient, fog, soft shadows)
 
 ### 3. Input + third-person camera
 
