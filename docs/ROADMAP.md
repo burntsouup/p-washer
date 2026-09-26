@@ -49,12 +49,14 @@ washing the driveway should feel good. See the success checklist at the bottom.
       light film, tire tracks and blotches, edge/corner grime, oil stains)
 - [x] Tests: brush shape, linearity, gap-free strokes, progress, pattern determinism and levels
 
-### 6. Dirt rendering on the driveway
+### 6. Dirt rendering on the driveway ✅
 
-- [ ] Connect a dirt mask to the driveway mesh and a texture
-- [ ] Material blends clean → dusty → grimy → crusted based on the mask
-- [ ] Debug paint mode: click to clean under the crosshair (before the washer exists)
-- [ ] Tests: UV → texel and meters → texels conversion
+- [x] Connect a dirt mask to the driveway mesh and a texture (`CleanableSurface`)
+- [x] Material plugin blends clean → dusty film → brown grime → black oil, keeping lighting
+      and shadows
+- [x] Debug brush: hold the left mouse button to clean under the crosshair (replaced by the
+      washer in Milestone 7)
+- [x] Tests: UV → texel and meters → texels conversion
 
 ### 7. Pressure washer: pick up, equip, spray
 
