@@ -118,6 +118,21 @@ export class Greybox {
   }
 
   /**
+   * Invisible wall that stops the player but not the camera or the spray.
+   *
+   * @param {string} name
+   * @param {{ size: number[], at: number[] }} options
+   */
+  invisibleWall(name, { size: [width, height, depth], at: [x, y, z] }) {
+    const mesh = MeshBuilder.CreateBox(name, { width, height, depth }, this.scene);
+    mesh.position.set(x, y + height / 2, z);
+    mesh.isVisible = false;
+    mesh.isPickable = false;
+    mesh.checkCollisions = true;
+    return mesh;
+  }
+
+  /**
    * Combines same-colored meshes into one, so the GPU draws them in a single call.
    *
    * @param {string} name

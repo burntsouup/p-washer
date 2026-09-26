@@ -53,6 +53,7 @@ export function createBackyard(scene, shadows) {
   buildFence(kit);
   buildPlants(kit);
   buildProps(kit);
+  buildBounds(kit);
 
   // Start at the street end of the driveway, facing the garage (yaw 0 = toward +z).
   const spawn = { position: [DRIVEWAY.centerX, 0, SIDEWALK.back + 1], yaw: 0 };
@@ -238,4 +239,23 @@ function buildProps(kit) {
     at: [1.2, 1.05, SIDEWALK.back + 0.4],
     color: COLORS.mailbox,
   });
+}
+
+/**
+ * Invisible walls around the playable area, so the player can't wander off into the fog.
+ * You can step onto the street, but not past the far side of it.
+ *
+ * @param {Greybox} kit
+ */
+function buildBounds(kit) {
+  const bounds = { left: -16, right: 16, front: -16.5, back: 27 };
+  const height = 4;
+  const width = bounds.right - bounds.left;
+  const depth = bounds.back - bounds.front;
+  const centerX = (bounds.left + bounds.right) / 2;
+  const centerZ = (bounds.front + bounds.back) / 2;
+  kit.invisibleWall('boundsFront', { size: [width, height, 1], at: [centerX, 0, bounds.front] });
+  kit.invisibleWall('boundsBack', { size: [width, height, 1], at: [centerX, 0, bounds.back] });
+  kit.invisibleWall('boundsLeft', { size: [1, height, depth], at: [bounds.left, 0, centerZ] });
+  kit.invisibleWall('boundsRight', { size: [1, height, depth], at: [bounds.right, 0, centerZ] });
 }
