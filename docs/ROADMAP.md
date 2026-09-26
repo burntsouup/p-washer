@@ -23,16 +23,17 @@ washing the driveway should feel good. See the success checklist at the bottom.
 - [x] Driveway is its own ground mesh with clean, unique UVs (it becomes the cleanable surface)
 - [x] Lighting and shadows look pleasant enough to spend time in (sky gradient, fog, soft shadows)
 
-### 3. Input + third-person camera
+### 3. Input + third-person camera ✅
 
-- [ ] Click to lock the pointer, `Esc` to release
-- [ ] Mouse look with clamped pitch, over-the-shoulder offset, crosshair
-- [ ] Camera pulls in when something is between it and the player
-- [ ] Tests: camera orbit math
+- [x] Click to lock the pointer, `Esc` to release
+- [x] Mouse look with clamped pitch, over-the-shoulder offset, crosshair
+- [x] Camera pulls in when something is between it and the player; player fades out when
+      the camera is squeezed in close
+- [x] Capsule player with a visor showing its facing (standing still for now)
+- [x] Tests: camera orbit math
 
 ### 4. Player movement
 
-- [ ] Capsule player with a marker showing its facing
 - [ ] WASD relative to the camera, `Shift` to run, smooth acceleration/deceleration
 - [ ] Turns toward movement direction; gravity; collides with walls and props
 - [ ] Tests: camera-relative direction, no diagonal speed boost, acceleration curve
