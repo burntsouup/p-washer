@@ -26,6 +26,9 @@ const COLORS = {
 
 // Flat surfaces are stacked a few millimeters apart so they don't flicker ("z-fighting").
 const LAYER = { street: 0.01, marking: 0.02, sidewalk: 0.02, paving: 0.03 };
+// Where two flat surfaces meet at different heights, the lower one extends this far under
+// the higher one. Otherwise, at low camera angles, you can see the lawn through the seam.
+const SEAM_OVERLAP = 0.1;
 
 const HOUSE = { left: -8, right: 8, front: 1.5, back: 11.5, wallHeight: 3.2 };
 const DRIVEWAY = { width: 5, length: 10, centerX: 4.5 };
@@ -59,8 +62,8 @@ function buildStreet(kit) {
   const streetWidth = 7;
   const streetZ = SIDEWALK.front - streetWidth / 2;
   kit.flat('street', {
-    size: [400, streetWidth],
-    at: [0, LAYER.street, streetZ],
+    size: [400, streetWidth + SEAM_OVERLAP],
+    at: [0, LAYER.street, streetZ + SEAM_OVERLAP / 2],
     color: COLORS.street,
   });
   kit.flat('streetLine', {
@@ -68,9 +71,10 @@ function buildStreet(kit) {
     at: [0, LAYER.marking, streetZ],
     color: COLORS.streetLine,
   });
+  const sidewalkWidth = SIDEWALK.back - SIDEWALK.front;
   kit.flat('sidewalk', {
-    size: [400, SIDEWALK.back - SIDEWALK.front],
-    at: [0, LAYER.sidewalk, (SIDEWALK.front + SIDEWALK.back) / 2],
+    size: [400, sidewalkWidth + SEAM_OVERLAP],
+    at: [0, LAYER.sidewalk, SIDEWALK.front + (sidewalkWidth + SEAM_OVERLAP) / 2],
     color: COLORS.sidewalk,
   });
 }
