@@ -1,55 +1,234 @@
-import {
-  Color3,
-  DirectionalLight,
-  HemisphericLight,
-  MeshBuilder,
-  ShadowGenerator,
-  StandardMaterial,
-  Vector3,
-} from '@babylonjs/core';
-import { config } from '../config.js';
+import { MeshBuilder } from '@babylonjs/core';
+import { Greybox } from './greybox.js';
+
+// Units are meters. +x = right (toward the garage), +z = away from the street, y = up.
+// The street runs along x at the front; the house faces the street.
+
+const COLORS = {
+  lawn: '#5b8a3c',
+  street: '#3a3b3f',
+  streetLine: '#d9b64a',
+  sidewalk: '#b9b6ad',
+  concrete: '#c4c0b6',
+  patio: '#b8a58c',
+  walls: '#e3dccd',
+  roof: '#5a5552',
+  garageDoor: '#f1efe9',
+  frontDoor: '#8c3b2e',
+  window: '#3f4f5f',
+  fence: '#9a7350',
+  trunk: '#6b4a32',
+  leaves: '#4a7a34',
+  bush: '#3f6e2e',
+  bin: '#35524a',
+  mailbox: '#2f3136',
+};
+
+// Flat surfaces are stacked a few millimeters apart so they don't flicker ("z-fighting").
+const LAYER = { street: 0.01, marking: 0.02, sidewalk: 0.02, paving: 0.03 };
+
+const HOUSE = { left: -8, right: 8, front: 1.5, back: 11.5, wallHeight: 3.2 };
+const DRIVEWAY = { width: 5, length: 10, centerX: 4.5 };
+const SIDEWALK = { front: -10, back: -8.5 };
 
 /**
- * Builds the level. For now: a lawn, a sun with shadows, and a 1 m crate for scale.
- * Milestone 2 turns this into the greybox backyard (house, driveway, fence).
+ * Builds the greybox level: house, driveway, street, fence, trees and a few props.
  *
  * @param {import('@babylonjs/core').Scene} scene
+ * @param {import('@babylonjs/core').ShadowGenerator} shadows
  */
-export function createBackyard(scene) {
-  // Soft sky/ground fill light so shadowed areas aren't pitch black.
-  const skyLight = new HemisphericLight('skyLight', new Vector3(0, 1, 0), scene);
-  skyLight.intensity = 0.55;
-  skyLight.groundColor = new Color3(0.35, 0.38, 0.32);
+export function createBackyard(scene, shadows) {
+  const kit = new Greybox(scene, shadows);
 
-  const sun = new DirectionalLight('sun', new Vector3(-0.45, -1, -0.35), scene);
-  sun.position = new Vector3(18, 36, 14);
-  sun.intensity = 1.1;
-
-  const shadows = new ShadowGenerator(config.render.shadowMapSize, sun);
-  shadows.usePercentageCloserFiltering = true;
-
-  const ground = MeshBuilder.CreateGround('lawn', { width: 40, height: 40 }, scene);
-  ground.material = createMatteMaterial('lawnMat', new Color3(0.36, 0.52, 0.28), scene);
+  const ground = MeshBuilder.CreateGround('lawn', { width: 400, height: 400 }, scene);
+  ground.material = kit.material(COLORS.lawn);
   ground.receiveShadows = true;
 
-  const crate = MeshBuilder.CreateBox('scaleCrate', { size: 1 }, scene);
-  crate.position.y = 0.5;
-  crate.material = createMatteMaterial('crateMat', new Color3(0.72, 0.52, 0.3), scene);
-  shadows.addShadowCaster(crate);
+  buildStreet(kit);
+  const driveway = buildDriveway(kit);
+  buildHouse(kit);
+  buildFence(kit);
+  buildPlants(kit);
+  buildProps(kit);
 
-  return { ground, sun, shadows };
+  return { ground, driveway };
+}
+
+/** @param {Greybox} kit */
+function buildStreet(kit) {
+  const streetWidth = 7;
+  const streetZ = SIDEWALK.front - streetWidth / 2;
+  kit.flat('street', {
+    size: [400, streetWidth],
+    at: [0, LAYER.street, streetZ],
+    color: COLORS.street,
+  });
+  kit.flat('streetLine', {
+    size: [400, 0.12],
+    at: [0, LAYER.marking, streetZ],
+    color: COLORS.streetLine,
+  });
+  kit.flat('sidewalk', {
+    size: [400, SIDEWALK.back - SIDEWALK.front],
+    at: [0, LAYER.sidewalk, (SIDEWALK.front + SIDEWALK.back) / 2],
+    color: COLORS.sidewalk,
+  });
 }
 
 /**
- * Placeholder material without the default plastic-looking highlight.
+ * The driveway runs from the sidewalk to the garage door. It will be the cleanable surface,
+ * so it's a separate flat mesh whose UVs cover it exactly once.
  *
- * @param {string} name
- * @param {Color3} color
- * @param {import('@babylonjs/core').Scene} scene
+ * @param {Greybox} kit
  */
-function createMatteMaterial(name, color, scene) {
-  const material = new StandardMaterial(name, scene);
-  material.diffuseColor = color;
-  material.specularColor = Color3.Black();
-  return material;
+function buildDriveway(kit) {
+  return kit.flat('driveway', {
+    size: [DRIVEWAY.width, DRIVEWAY.length],
+    at: [DRIVEWAY.centerX, LAYER.paving, HOUSE.front - DRIVEWAY.length / 2],
+    color: COLORS.concrete,
+  });
+}
+
+/** @param {Greybox} kit */
+function buildHouse(kit) {
+  const width = HOUSE.right - HOUSE.left;
+  const depth = HOUSE.back - HOUSE.front;
+  const centerX = (HOUSE.left + HOUSE.right) / 2;
+  const centerZ = (HOUSE.front + HOUSE.back) / 2;
+
+  kit.block('house', {
+    size: [width, HOUSE.wallHeight, depth],
+    at: [centerX, 0, centerZ],
+    color: COLORS.walls,
+  });
+  const overhang = 0.5;
+  kit.pyramid('roof', {
+    size: [width + overhang * 2, 2.4, depth + overhang * 2],
+    at: [centerX, HOUSE.wallHeight, centerZ],
+    color: COLORS.roof,
+  });
+
+  // Doors and windows are thin slabs poking 3 cm out of the front wall.
+  const faceZ = HOUSE.front - 0.03;
+  kit.block('garageDoor', {
+    size: [4.2, 2.3, 0.1],
+    at: [DRIVEWAY.centerX, 0, faceZ],
+    color: COLORS.garageDoor,
+  });
+  kit.block('frontDoor', { size: [1, 2.1, 0.1], at: [-2, 0, faceZ], color: COLORS.frontDoor });
+  kit.block('windowLeft', { size: [1.6, 1.2, 0.1], at: [-5.5, 1, faceZ], color: COLORS.window });
+  kit.block('windowRight', { size: [1.3, 1.2, 0.1], at: [0.2, 1, faceZ], color: COLORS.window });
+
+  kit.flat('walkway', {
+    size: [1.2, HOUSE.front - SIDEWALK.back],
+    at: [-2, LAYER.paving, (HOUSE.front + SIDEWALK.back) / 2],
+    color: COLORS.concrete,
+  });
+  kit.flat('patio', {
+    size: [6, 4],
+    at: [-2, LAYER.paving, HOUSE.back + 2],
+    color: COLORS.patio,
+  });
+}
+
+/**
+ * Wooden fence enclosing the backyard, with a gate gap on the driveway side.
+ *
+ * @param {Greybox} kit
+ */
+function buildFence(kit) {
+  const z = 7; // where the fence meets the sides of the house
+  const back = 24;
+  const lot = 12; // half-width of the lot
+  /** @type {[number, number, number, number][]} Axis-aligned [x1, z1, x2, z2] runs. */
+  const runs = [
+    [-lot, z, HOUSE.left, z],
+    [-lot, z, -lot, back],
+    [-lot, back, lot, back],
+    [lot, z, lot, back],
+    [HOUSE.right + 1.5, z, lot, z], // leaves a 1.5 m gate gap next to the house
+  ];
+
+  const height = 1.6;
+  const postSpacing = 2.4;
+  const parts = [];
+  for (const [x1, z1, x2, z2] of runs) {
+    const length = Math.hypot(x2 - x1, z2 - z1);
+    const alongX = z1 === z2;
+    parts.push(
+      kit.block('fencePanel', {
+        size: alongX ? [length, height, 0.05] : [0.05, height, length],
+        at: [(x1 + x2) / 2, 0, (z1 + z2) / 2],
+        color: COLORS.fence,
+      }),
+    );
+    const posts = Math.ceil(length / postSpacing);
+    for (let i = 0; i <= posts; i++) {
+      const t = i / posts;
+      parts.push(
+        kit.block('fencePost', {
+          size: [0.12, height + 0.15, 0.12],
+          at: [x1 + (x2 - x1) * t, 0, z1 + (z2 - z1) * t],
+          color: COLORS.fence,
+        }),
+      );
+    }
+  }
+  kit.merge('fence', parts);
+}
+
+/** @param {Greybox} kit */
+function buildPlants(kit) {
+  /** @type {[number, number, number][]} [x, z, size] */
+  const trees = [
+    [-8.5, -4.5, 1],
+    [11, -6, 0.8],
+    [-6, 19, 1.2],
+  ];
+  for (const [x, z, size] of trees) {
+    const trunkHeight = 2.4 * size;
+    kit.cylinder('treeTrunk', {
+      diameter: 0.35 * size,
+      height: trunkHeight,
+      at: [x, 0, z],
+      color: COLORS.trunk,
+    });
+    kit.blob('treeCanopy', {
+      radius: 1.9 * size,
+      at: [x, trunkHeight - 0.6 * size, z],
+      color: COLORS.leaves,
+      squash: 0.85,
+      solid: false,
+    });
+  }
+
+  // A row of bushes along the front of the house, skipping the door and the garage.
+  for (const x of [-7.4, -6.2, -5, -3.7, -0.4, 0.8]) {
+    kit.blob('bush', {
+      radius: 0.6,
+      at: [x, 0, HOUSE.front - 0.7],
+      color: COLORS.bush,
+      squash: 0.8,
+    });
+  }
+}
+
+/** @param {Greybox} kit */
+function buildProps(kit) {
+  // Trash bins beside the garage.
+  kit.block('trashBin', { size: [0.6, 1.05, 0.7], at: [7.5, 0, 0.8], color: COLORS.bin });
+  kit.block('trashBin', { size: [0.6, 1.05, 0.7], at: [7.5, 0, 0], color: COLORS.bin });
+
+  // Mailbox at the end of the driveway.
+  kit.cylinder('mailboxPost', {
+    diameter: 0.09,
+    height: 1.05,
+    at: [1.2, 0, SIDEWALK.back + 0.4],
+    color: COLORS.mailbox,
+  });
+  kit.block('mailbox', {
+    size: [0.25, 0.28, 0.5],
+    at: [1.2, 1.05, SIDEWALK.back + 0.4],
+    color: COLORS.mailbox,
+  });
 }
