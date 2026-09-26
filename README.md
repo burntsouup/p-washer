@@ -14,6 +14,8 @@ JavaScript.
 | ------------- | ---------------------------------------------- |
 | Click         | Capture the mouse and play                     |
 | Mouse         | Look around                                    |
+| WASD / arrows | Move                                           |
+| Shift         | Run                                            |
 | Esc           | Release the mouse                              |
 | `` ` `` (key) | Toggle the Babylon Inspector (dev builds only) |
 
@@ -47,7 +49,7 @@ src/
   config.js            Every tunable number lives here
   game/                Game loop, keyboard/mouse input, shared helpers
   environment/         The level: layout (Backyard.js), lighting + sky, greybox shape kit
-  player/              The player character
+  player/              The player character (movement.js is the tested, pure part)
   camera/              Third-person camera (cameraMath.js is the tested, pure part)
   ui/                  HTML overlay: crosshair, "click to play", FPS
 docs/
