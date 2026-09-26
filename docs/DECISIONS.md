@@ -60,3 +60,11 @@ Load files from `public/` with `import.meta.env.BASE_URL` + path, never a leadin
 ## 9. HTML/CSS for the HUD
 
 **Why:** Simpler than in-engine GUI, familiar, and inspectable with browser devtools.
+
+## 10. Level built in code from simple shapes
+
+**Why:** A small "greybox kit" (`src/environment/greybox.js`) builds boxes, pyramids and blobs
+from a few lines each, so moving the house or resizing the driveway is a one-number change
+with instant live reload. No 3D modeling tool or asset pipeline needed yet.
+**Revisit when:** we want real art. Then model in Blender and load `.glb` files, keeping
+the driveway (and anything cleanable) as separate meshes with clean UVs.
