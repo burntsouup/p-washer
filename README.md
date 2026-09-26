@@ -1,5 +1,70 @@
 # p-washer
 
-A small, satisfying 3D pressure-washing game built with Babylon.js.
+**▶ Play the latest build: https://burntsouup.github.io/p-washer/**
 
-Work in progress.
+A small, satisfying 3D pressure-washing game. Walk up to something dirty, blast it clean,
+enjoy the before/after. Built with [Babylon.js](https://www.babylonjs.com/) and plain
+JavaScript.
+
+**Status:** early prototype. See [docs/ROADMAP.md](docs/ROADMAP.md) for what's done and next.
+
+## Controls (current)
+
+| Input         | Action                                         |
+| ------------- | ---------------------------------------------- |
+| Drag mouse    | Orbit the camera (temporary)                   |
+| Scroll        | Zoom                                           |
+| `` ` `` (key) | Toggle the Babylon Inspector (dev builds only) |
+
+## Run it locally
+
+Requires **Node 24** (see `.nvmrc`).
+
+```bash
+npm install
+npm run dev      # opens http://localhost:5173 with live reload
+```
+
+| Script            | What it does                                             |
+| ----------------- | -------------------------------------------------------- |
+| `npm run dev`     | Dev server with live reload                              |
+| `npm test`        | Run unit tests once (`npm run test:watch` to keep going) |
+| `npm run lint`    | Check code for mistakes (ESLint)                         |
+| `npm run format`  | Auto-format everything (Prettier)                        |
+| `npm run build`   | Production build into `dist/`                            |
+| `npm run preview` | Serve the production build locally                       |
+| `npm run check`   | Everything CI runs: lint, format check, tests, build     |
+
+## Project layout
+
+```
+src/
+  main.js              Entry point: creates the Game
+  config.js            Every tunable number lives here
+  game/                Game loop and shared helpers
+  environment/         The level (placeholder geometry)
+  ui/                  HTML overlay (FPS, later HUD)
+docs/
+  ROADMAP.md           Milestones and checklists (our plan)
+  DECISIONS.md         Why things are the way they are
+```
+
+Folders for `player/`, `camera/`, `pressure-washer/`, `cleaning/`, and `audio/` are added by
+the milestone that needs them.
+
+**Rule of thumb:** files that import Babylon.js are glue. Game logic and math go in "pure"
+files (no Babylon imports) with a `*.test.js` file next to them.
+
+## How we work
+
+1. Branch off `main` for each roadmap step: `git switch -c m2-greybox`
+2. Commit small, working steps with short imperative messages ("Add driveway mesh")
+3. Push and open a pull request. CI runs lint, format check, tests, and build
+4. Squash-merge when green. `main` auto-deploys to GitHub Pages in about a minute
+5. Play the deployed build, write down what feels bad, repeat
+
+`main` should always be playable.
+
+## License
+
+Code: [MIT](LICENSE). Third-party libraries and assets: see [CREDITS.md](CREDITS.md).
