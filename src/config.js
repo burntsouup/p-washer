@@ -22,4 +22,26 @@ export const config = {
     // KeyboardEvent.code that toggles the Babylon Inspector (the ` key, left of 1).
     inspectorKey: 'Backquote',
   },
+  camera: {
+    fov: 1.0, // vertical field of view in radians (~57°)
+    sensitivity: 0.0025, // radians of turn per pixel of mouse movement
+    invertY: false,
+    initialPitch: 0.2,
+    minPitch: -0.9, // how far you can look up (radians, negative = up)
+    maxPitch: 1.2, // how far you can look down
+    pivotHeight: 1.6, // the point the camera orbits: roughly the player's head
+    distance: 4, // how far behind the player
+    shoulderOffset: 0.7, // how far to the right, so the player doesn't block the crosshair
+    collisionPadding: 0.2, // gap kept between the camera and a wall it's pushed against
+    returnSpeed: 6, // how quickly the camera eases back out once a wall is gone
+    minHeight: 0.3, // never go lower than this above the ground
+    nearClip: 0.05, // closest distance the camera can draw; small so walls don't clip
+    // When pushed in close, fade the player out so they don't fill the screen (meters).
+    playerHiddenBelow: 0.7,
+    playerSolidAbove: 1.4,
+  },
+  player: {
+    height: 1.8,
+    radius: 0.35,
+  },
 };

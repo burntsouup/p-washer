@@ -1,0 +1,61 @@
+/* Without this, elements with their own `display` would ignore the `hidden` attribute. */
+[hidden] {
+  display: none !important;
+}
+
+.crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  background: #fff;
+  /* Dark outline keeps it visible on light concrete and bright sky. */
+  box-shadow: 0 0 0 1.5px rgb(0 0 0 / 0.55);
+}
+
+.play-prompt {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 260px;
+  padding: 20px 28px;
+  border-radius: 12px;
+  background: rgb(20 24 30 / 0.72);
+  text-align: center;
+  backdrop-filter: blur(4px);
+}
+
+.play-prompt h1 {
+  margin: 0 0 4px;
+  font-size: 28px;
+  letter-spacing: 0.02em;
+}
+
+.play-prompt-action {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #9fd4ff;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 14px;
+  margin: 0;
+  text-align: left;
+}
+
+.controls dt {
+  font-weight: 600;
+  text-align: right;
+  opacity: 0.85;
+}
+
+.controls dd {
+  margin: 0;
+}

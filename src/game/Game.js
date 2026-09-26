@@ -1,8 +1,12 @@
-import { ArcRotateCamera, Engine, Scene, Vector3 } from '@babylonjs/core';
+import { Engine, Scene } from '@babylonjs/core';
+import { ThirdPersonCamera } from '../camera/ThirdPersonCamera.js';
 import { config } from '../config.js';
 import { createBackyard } from '../environment/Backyard.js';
 import { createLighting, createSky } from '../environment/lighting.js';
+import { Player } from '../player/Player.js';
 import { DebugOverlay } from '../ui/DebugOverlay.js';
+import { Hud } from '../ui/Hud.js';
+import { Input } from './Input.js';
 import { toDeltaSeconds } from './time.js';
 
 /**
@@ -20,31 +24,19 @@ export class Game {
     const adaptToDeviceRatio = true; // render at full Retina resolution
     this.engine = new Engine(canvas, config.render.antialias, {}, adaptToDeviceRatio);
     this.scene = new Scene(this.engine);
+    this.input = new Input(canvas);
 
     const { shadows } = createLighting(this.scene);
     createSky(this.scene);
-    this.environment = createBackyard(this.scene, shadows);
+    this.level = createBackyard(this.scene, shadows);
 
-    // Temporary orbit camera until Milestone 3 replaces it with the third-person camera.
-    // Left-drag rotates, right-drag pans, scroll zooms.
-    const camera = new ArcRotateCamera(
-      'debugCamera',
-      -1.2, // around: from the front-right, over the driveway
-      1.05, // down from straight overhead
-      30, // distance in meters
-      new Vector3(0, 1, -1),
-      this.scene,
-    );
-    camera.lowerRadiusLimit = 3;
-    camera.upperRadiusLimit = 70;
-    camera.upperBetaLimit = Math.PI / 2 - 0.05; // keep the camera above the ground
-    camera.panningSensibility = 100; // lower = faster panning
-    camera.attachControl(canvas, true);
-
+    this.player = new Player(this.scene, shadows, this.level.spawn);
+    this.camera = new ThirdPersonCamera(this.scene, this.input, this.player, this.level.spawn.yaw);
+    this.hud = new Hud(hudRoot, this.input);
     this.debugOverlay = new DebugOverlay(this.engine, this.scene, hudRoot);
 
     // Update order matters: later systems read what earlier ones produced this frame.
-    this.systems = [this.debugOverlay];
+    this.systems = [this.camera, this.hud, this.debugOverlay];
 
     window.addEventListener('resize', () => this.engine.resize());
   }
@@ -53,6 +45,7 @@ export class Game {
     this.engine.runRenderLoop(() => {
       const dt = toDeltaSeconds(this.engine.getDeltaTime(), config.loop.maxDeltaSeconds);
       for (const system of this.systems) system.update(dt);
+      this.input.endFrame();
       this.scene.render();
     });
   }

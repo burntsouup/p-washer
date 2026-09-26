@@ -54,7 +54,10 @@ export function createBackyard(scene, shadows) {
   buildPlants(kit);
   buildProps(kit);
 
-  return { ground, driveway };
+  // Start at the street end of the driveway, facing the garage (yaw 0 = toward +z).
+  const spawn = { position: [DRIVEWAY.centerX, 0, SIDEWALK.back + 1], yaw: 0 };
+
+  return { ground, driveway, spawn };
 }
 
 /** @param {Greybox} kit */
