@@ -12,13 +12,13 @@ JavaScript.
 
 | Input         | Action                                         |
 | ------------- | ---------------------------------------------- |
-| Left-drag     | Orbit the camera (temporary)                   |
-| Right-drag    | Pan the camera                                 |
-| Scroll        | Zoom                                           |
+| Click         | Capture the mouse and play                     |
+| Mouse         | Look around                                    |
+| Esc           | Release the mouse                              |
 | `` ` `` (key) | Toggle the Babylon Inspector (dev builds only) |
 
 **Dev tip:** in dev builds, type `game` in the browser console to inspect the running game,
-e.g. `game.scene.meshes`.
+e.g. `game.scene.meshes` or `game.camera.yaw`.
 
 ## Run it locally
 
@@ -45,16 +45,18 @@ npm run dev      # opens http://localhost:5173 with live reload
 src/
   main.js              Entry point: creates the Game
   config.js            Every tunable number lives here
-  game/                Game loop and shared helpers
+  game/                Game loop, keyboard/mouse input, shared helpers
   environment/         The level: layout (Backyard.js), lighting + sky, greybox shape kit
-  ui/                  HTML overlay (FPS, later HUD)
+  player/              The player character
+  camera/              Third-person camera (cameraMath.js is the tested, pure part)
+  ui/                  HTML overlay: crosshair, "click to play", FPS
 docs/
   ROADMAP.md           Milestones and checklists (our plan)
   DECISIONS.md         Why things are the way they are
 ```
 
-Folders for `player/`, `camera/`, `pressure-washer/`, `cleaning/`, and `audio/` are added by
-the milestone that needs them.
+Folders for `pressure-washer/`, `cleaning/`, and `audio/` are added by the milestone that
+needs them.
 
 **Rule of thumb:** files that import Babylon.js are glue. Game logic and math go in "pure"
 files (no Babylon imports) with a `*.test.js` file next to them.

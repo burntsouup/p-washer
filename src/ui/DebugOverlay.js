@@ -41,6 +41,7 @@ export class DebugOverlay {
     }
     const { ShowInspector } = await import('@babylonjs/inspector');
     if (!this.inspector || this.inspector.isDisposed) {
+      document.exitPointerLock(); // free the mouse so you can click around the Inspector
       this.inspector = ShowInspector(this.scene);
     }
   }
