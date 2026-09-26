@@ -1,4 +1,5 @@
 import { MeshBuilder } from '@babylonjs/core';
+import { drivewayDirt } from '../cleaning/dirtPatterns.js';
 import { Greybox } from './greybox.js';
 
 // Units are meters. +x = right (toward the garage), +z = away from the street, y = up.
@@ -58,7 +59,18 @@ export function createBackyard(scene, shadows) {
   // Start at the street end of the driveway, facing the garage (yaw 0 = toward +z).
   const spawn = { position: [DRIVEWAY.centerX, 0, SIDEWALK.back + 1], yaw: 0 };
 
-  return { ground, driveway, spawn };
+  // Surfaces the player can clean. Their UVs run 0..1 across the mesh: u across (x) and
+  // v from the street end to the garage end (z), matching dirtAt's x and y in meters.
+  const cleanables = [
+    {
+      mesh: driveway,
+      width: DRIVEWAY.width,
+      length: DRIVEWAY.length,
+      dirtAt: drivewayDirt({ width: DRIVEWAY.width, length: DRIVEWAY.length, seed: 1 }),
+    },
+  ];
+
+  return { ground, driveway, spawn, cleanables };
 }
 
 /** @param {Greybox} kit */

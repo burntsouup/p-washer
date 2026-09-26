@@ -24,6 +24,7 @@ export class Hud {
         <dt>Mouse</dt><dd>Look around</dd>
         <dt>WASD</dt><dd>Move</dd>
         <dt>Shift</dt><dd>Run</dd>
+        <dt>Hold click</dt><dd>Clean under the crosshair</dd>
         <dt>Esc</dt><dd>Release the mouse</dd>
       </dl>`;
 

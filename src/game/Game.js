@@ -1,5 +1,7 @@
 import { Engine, Scene } from '@babylonjs/core';
 import { ThirdPersonCamera } from '../camera/ThirdPersonCamera.js';
+import { CleanableSurface } from '../cleaning/CleanableSurface.js';
+import { CleaningSystem } from '../cleaning/CleaningSystem.js';
 import { config } from '../config.js';
 import { createBackyard } from '../environment/Backyard.js';
 import { createLighting, createSky } from '../environment/lighting.js';
@@ -9,11 +11,13 @@ import { Hud } from '../ui/Hud.js';
 import { Input } from './Input.js';
 import { toDeltaSeconds } from './time.js';
 
+/** How far the temporary crosshair brush reaches, in meters. */
+const DEBUG_BRUSH_RANGE = 25;
+
 /**
  * Owns the engine, the scene, and every game system.
  *
  * Each frame: work out how much time passed, update each system in order, then render.
- * Systems are plain objects with an `update(dt)` method, where dt is in seconds.
  */
 export class Game {
   /**
@@ -29,6 +33,11 @@ export class Game {
     const { shadows } = createLighting(this.scene);
     createSky(this.scene);
     this.level = createBackyard(this.scene, shadows);
+
+    this.cleaning = new CleaningSystem();
+    for (const definition of this.level.cleanables) {
+      this.cleaning.add(new CleanableSurface(this.scene, definition));
+    }
 
     this.player = new Player(this.scene, shadows, this.input, this.level.spawn);
     this.camera = new ThirdPersonCamera(this.scene, this.input, this.player, this.level.spawn.yaw);
@@ -55,7 +64,25 @@ export class Game {
   update(dt) {
     this.player.update(dt, this.camera.yaw); // move relative to where the camera looks
     this.camera.update(dt); // then follow the player to their new position
+    this.updateDebugBrush(dt);
+    this.cleaning.update(); // send any changed dirt to the GPU
     this.hud.update();
     this.debugOverlay.update(dt);
+  }
+
+  /**
+   * Temporary stand-in for the pressure washer (Milestone 7 replaces it): hold the left
+   * mouse button to clean whatever is under the crosshair.
+   *
+   * @param {number} dt
+   */
+  updateDebugBrush(dt) {
+    if (!this.input.isMouseDown(0)) {
+      this.cleaning.stopSpraying();
+      return;
+    }
+    const ray = this.camera.babylonCamera.getForwardRay(DEBUG_BRUSH_RANGE);
+    const hit = this.scene.pickWithRay(ray, (mesh) => mesh.isPickable && mesh.isVisible);
+    this.cleaning.spray(hit, dt);
   }
 }
