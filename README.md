@@ -16,6 +16,7 @@ JavaScript.
 | Mouse         | Look around                                    |
 | WASD / arrows | Move                                           |
 | Shift         | Run                                            |
+| Hold click    | Clean under the crosshair (until the washer)   |
 | Esc           | Release the mouse                              |
 | `` ` `` (key) | Toggle the Babylon Inspector (dev builds only) |
 
@@ -51,7 +52,7 @@ src/
   environment/         The level: layout (Backyard.js), lighting + sky, greybox shape kit
   player/              The player character (movement.js is the tested, pure part)
   camera/              Third-person camera (cameraMath.js is the tested, pure part)
-  cleaning/            Dirt: DirtMask (the grid + brush), procedural dirt patterns, noise
+  cleaning/            Dirt: DirtMask (grid + brush), patterns, the dirt shader, CleaningSystem
   ui/                  HTML overlay: crosshair, "click to play", FPS
 docs/
   ROADMAP.md           Milestones and checklists (our plan)

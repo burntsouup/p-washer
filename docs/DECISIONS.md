@@ -73,3 +73,12 @@ from a few lines each, so moving the house or resizing the driveway is a one-num
 with instant live reload. No 3D modeling tool or asset pipeline needed yet.
 **Revisit when:** we want real art. Then model in Blender and load `.glb` files, keeping
 the driveway (and anything cleanable) as separate meshes with clean UVs.
+
+## 11. Dirt drawn by a material plugin
+
+**Why:** `DirtMaterialPlugin` adds ~10 lines of shader code to Babylon's standard material,
+so dirty surfaces keep normal lighting and shadows. The dirt grid is uploaded as a one-byte-
+per-texel texture with mipmaps (~0.1 ms per upload). The alternative, coloring an RGBA texture
+on the CPU, is simpler but can't add wetness or sharp detail later without a rewrite.
+**Gotcha:** the plugin must request UVs (`_needUVs`, `MAINUV1`) because the material has no
+other textures. `RawTexture.CreateRTexture` defaults to float data, so pass the byte type.

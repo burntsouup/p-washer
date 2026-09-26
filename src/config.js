@@ -49,4 +49,12 @@ export const config = {
     deceleration: 40, // m/s²: how hard you brake when letting go of the keys
     turnSpeed: 14, // how quickly the body turns to face the direction of travel
   },
+  cleaning: {
+    texelsPerMeter: 51.2, // dirt detail: ~2 cm per texel (the 5 m wide driveway gets 256)
+    sprayRadius: 0.15, // meters
+    brushHardness: 0.6, // 0..1: how much of the spray is full strength before its soft edge
+    cleanRate: 2, // dirt removed per second at the center of the spray (1 = extreme dirt)
+    // Dirt colors from light to heavy. Clean concrete is the surface's own color.
+    dirtColors: { light: '#9e957f', grime: '#6b604f', oil: '#25211d' },
+  },
 };
