@@ -51,14 +51,14 @@ src/
   environment/         The level: layout (Backyard.js), lighting + sky, greybox shape kit
   player/              The player character (movement.js is the tested, pure part)
   camera/              Third-person camera (cameraMath.js is the tested, pure part)
+  cleaning/            Dirt: DirtMask (the grid + brush), procedural dirt patterns, noise
   ui/                  HTML overlay: crosshair, "click to play", FPS
 docs/
   ROADMAP.md           Milestones and checklists (our plan)
   DECISIONS.md         Why things are the way they are
 ```
 
-Folders for `pressure-washer/`, `cleaning/`, and `audio/` are added by the milestone that
-needs them.
+Folders for `pressure-washer/` and `audio/` are added by the milestone that needs them.
 
 **Rule of thumb:** files that import Babylon.js are glue. Game logic and math go in "pure"
 files (no Babylon imports) with a `*.test.js` file next to them.

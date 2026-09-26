@@ -40,13 +40,14 @@ washing the driveway should feel good. See the success checklist at the bottom.
 - [x] Feet stay on the ground (the yard is flat, so no gravity or jumping needed yet)
 - [x] Tests: camera-relative direction, no diagonal speed boost, acceleration curve
 
-### 5. Dirt mask core (pure JS, test-first)
+### 5. Dirt mask core (pure JS, test-first) ✅
 
-- [ ] Grid of dirt values (0 clean → 1 extreme) per surface
-- [ ] Circular brush with soft falloff, scaled by `dt`
-- [ ] Stroke interpolation so fast sweeps leave no gaps
-- [ ] Incremental progress tracking; procedural starting dirt (seeded, four dirt levels)
-- [ ] Tests: most of the suite lives here
+- [x] Grid of dirt values (0 clean → 1 extreme) per surface
+- [x] Circular brush with soft falloff; strength is passed in as rate × `dt`
+- [x] Stroke interpolation so fast sweeps leave no gaps
+- [x] Incremental progress tracking; procedural starting dirt (seeded, four dirt levels:
+      light film, tire tracks and blotches, edge/corner grime, oil stains)
+- [x] Tests: brush shape, linearity, gap-free strokes, progress, pattern determinism and levels
 
 ### 6. Dirt rendering on the driveway
 

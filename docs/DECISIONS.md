@@ -31,6 +31,9 @@ give a UV coordinate; we subtract a soft brush there and upload the changed grid
 It's sharp enough, progress is exact and cheap, and the core is pure JS we can unit-test.
 Alternatives considered: vertex colors (blurry, needs dense meshes) and GPU render-target
 painting (faster at scale, but progress needs GPU readback and it's harder to debug).
+**Details:** ~2 cm per texel (the 5 × 10 m driveway is 256 × 512). Dirt comes off linearly, so
+extreme dirt (1.0) takes 4× as long as a light film (0.25). A texel counts as clean at ≤ 0.05.
+Starting dirt is generated from a seed in meters, so it doesn't depend on texture resolution.
 **Revisit if:** we need many large, high-resolution surfaces at once.
 
 ## 5. Import Babylon.js from the package root
