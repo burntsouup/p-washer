@@ -90,3 +90,16 @@ nozzle to that point is the actual water. This keeps third-person aiming intuiti
 letting walls and props block the spray realistically. With distance, the spot widens and
 weakens linearly, so throughput (width × strength) peaks around 2 m: close is precise, far is
 broad but slow, beyond 6 m nothing happens. **Revisit:** in the tuning pass (Milestone 10).
+
+## 13. Feedback ("juice") without asset files
+
+**Why:** Placeholder art shouldn't block feel. Wetness lives in the dirt texture's second
+channel (red = dirt, green = wetness), so one upload covers both; the shader darkens wet spots
+and adds a sky sheen and sun glints. Particle and beam textures are drawn with the 2D canvas
+API at startup. Sounds are synthesized with the Web Audio API: filtered noise for water,
+random clicks for grit, oscillators for the engine. A pure `audioMix()` decides the volume of
+each layer from the washer's state, so the sound design rules are readable and tested.
+**Revisit when:** we want richer sound. Swap in CC0 recordings (e.g. from Freesound) behind the
+same four layers, and list them in `CREDITS.md`.
+**Gotcha:** browsers block audio until the player interacts, so the audio graph is built on
+the first click.
