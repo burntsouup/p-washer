@@ -16,12 +16,11 @@ export class DirtMaterialPlugin extends MaterialPluginBase {
    */
   constructor(material, dirtTexture) {
     super(material, 'DirtMask', 200, { DIRTMASK: false });
-    const { dirtColors, wetDarkening } = config.cleaning;
+    const { dirtColors } = config.cleaning;
     this.dirtTexture = dirtTexture;
     this.colorLight = Color3.FromHexString(dirtColors.light);
     this.colorGrime = Color3.FromHexString(dirtColors.grime);
     this.colorOil = Color3.FromHexString(dirtColors.oil);
-    this.wetDarkening = wetDarkening;
     this.skyColor = Color3.FromHexString(config.render.sky.horizon);
     this.sunDirection = new Vector3(...config.render.sun.direction).normalize();
     this.highlightColor = Color3.FromHexString(config.job.highlightColor);
@@ -86,7 +85,6 @@ export class DirtMaterialPlugin extends MaterialPluginBase {
     uniformBuffer.updateColor3('dirtColorOil', this.colorOil);
     uniformBuffer.updateColor3('wetSkyColor', this.skyColor);
     uniformBuffer.updateVector3('wetSunDirection', this.sunDirection);
-    uniformBuffer.updateFloat('wetDarkening', this.wetDarkening);
     uniformBuffer.updateColor3('dirtHighlightColor', this.highlightColor);
     uniformBuffer.setTexture('dirtSampler', this.dirtTexture);
   }
@@ -99,6 +97,7 @@ export class DirtMaterialPlugin extends MaterialPluginBase {
    */
   hardBindForSubMesh(uniformBuffer) {
     uniformBuffer.updateFloat('dirtHighlight', this.highlight);
+    uniformBuffer.updateFloat('wetDarkening', config.cleaning.wetDarkening); // live-tunable
   }
 
   /** @param {import('@babylonjs/core').BaseTexture[]} activeTextures */

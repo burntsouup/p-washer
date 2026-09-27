@@ -59,10 +59,14 @@ export class AudioSystem {
 
   toggleMute() {
     this.muted = !this.muted;
-    if (this.context && this.master) {
-      const volume = this.muted ? 0 : config.audio.master;
-      this.master.gain.setTargetAtTime(volume, this.context.currentTime, FADE_TIME);
-    }
+    this.applyVolume();
+  }
+
+  /** Applies the master volume from config (or silence while muted). */
+  applyVolume() {
+    if (!this.context || !this.master) return;
+    const volume = this.muted ? 0 : config.audio.master;
+    this.master.gain.setTargetAtTime(volume, this.context.currentTime, FADE_TIME);
   }
 
   /**

@@ -90,8 +90,13 @@ Babylon only calls if the plugin sets `registerForExtraEvents = true` before ena
 **Why:** The crosshair ray (from the camera) decides _what_ you aim at; a second ray from the
 nozzle to that point is the actual water. This keeps third-person aiming intuitive while
 letting walls and props block the spray realistically. With distance, the spot widens and
-weakens linearly, so throughput (width × strength) peaks around 2 m: close is precise, far is
-broad but slow, beyond 6 m nothing happens. **Revisit:** in the tuning pass (Milestone 10).
+weakens linearly; beyond 6 m nothing happens. Because most of the driveway is a light film,
+a wide, weaker spray (2–4 m) clears it fastest, while getting close gives full strength for
+tire tracks, corners and oil stains. That choice is the mechanic.
+**Tuning (Milestone 10):** a simulation of a player sweeping rows at 1.5 m/s showed the first
+numbers needed ~7.5 min of _perfect_ play to finish. With `cleanRate: 3`, `nozzleRadius:
+0.08`, `spreadPerMeter: 0.09`, one pass at 2.3 m clears ~90% and perfect play finishes in
+~2.4 min (a real player: ~4–5 min), with heavy dirt still needing extra passes.
 
 ## 13. Feedback ("juice") without asset files
 
@@ -115,3 +120,13 @@ threshold, so it reads 100% exactly at completion. Holding `F` highlights anythi
 counted as dirty, for players who want to find what they missed. The timer starts at the
 first spray so walking around first doesn't count. `R` only restarts after completion, so a
 stray keypress can't wipe your progress.
+
+## 15. Tuning panel ships with the game (behind `T`)
+
+**Why:** Feel is found by playing, not by editing numbers and reloading. The lil-gui panel
+(MIT, ~30 KB) edits `config` live; most systems already read it every frame, and the few that
+copy a value at startup (camera FOV, master volume, job threshold) get an onChange hook. It's
+included in production builds, hidden until `T`, so tuning works on the live site too.
+"Copy changes" copies only the edited values as JSON, ready to paste into `config.js` (or
+into a Copilot chat) to make them the new defaults. Nothing is saved between reloads, so
+`config.js` stays the single source of truth.

@@ -20,7 +20,8 @@
     "check": "npm run lint && npm run format:check && npm test && npm run build"
   },
   "dependencies": {
-    "@babylonjs/core": "^9.28.0"
+    "@babylonjs/core": "^9.28.0",
+    "lil-gui": "^0.21.0"
   },
   "devDependencies": {
     "@babylonjs/inspector": "^9.28.0",

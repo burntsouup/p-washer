@@ -84,10 +84,13 @@ washing the driveway should feel good. See the success checklist at the bottom.
       time taken (timed from the first spray); `R` starts over (only after completion)
 - [x] Tests: job rules (waiting, timing, completing once, display %, reset), `fadeAll`
 
-### 10. Tuning panel + playtest pass
+### 10. Tuning panel + playtest pass ✅ (your playtest still to come)
 
-- [ ] lil-gui sliders for movement, camera, brush, clean rate, range
-- [ ] 10-minute playtest against the checklist below; add findings to this file
+- [x] Tuning panel (`T`): live sliders for movement, camera, spray, cleaning, water effects,
+      and sound; "Copy changes" puts just the edited values on the clipboard for config.js
+- [x] Pacing simulation of a full job (see decision #12) → faster cleaning and a wider spray
+- [x] Automated playtest findings recorded below
+- [ ] **Human playtest:** play a full job (~5 min) against the checklist below
 
 ### v0.1 success checklist
 
@@ -98,6 +101,27 @@ washing the driveway should feel good. See the success checklist at the bottom.
 - [ ] Dirt removal is immediately understandable
 - [ ] The clean/dirty transformation is visually obvious
 - [ ] Spraying has satisfying audio and visual feedback
+
+### Playtest findings (Milestones 2–10)
+
+Fixed along the way: skewed roof, washed-out lighting, lawn showing through seams, player
+filling the screen near walls, invisible wetness, invisible splash, snow-globe sparkles,
+unhandled pointer-lock errors, and a job that took ~7.5 minutes of _perfect_ play.
+
+Still open, roughly in priority order:
+
+1. **Oil stains can be skipped.** Progress counts texels, and the stains are only ~2% of
+   the area, so you can finish at 98% without touching the most satisfying dirt. Consider
+   weighting progress by the _amount_ of dirt, so heavy grime counts for more.
+2. **Placeholder audio.** Synthesized layers work, but real CC0 recordings would sound much
+   richer. The four layers (engine, hiss, impact, stripping) stay the same.
+3. **The fan beam is flat, but the cleaning spot is round.** Fine at normal angles; an
+   elliptical brush that follows the fan would feel more authentic.
+4. **Only the driveway gets wet.** Spraying the house, fence or lawn splashes but leaves no
+   mark. A simple wet effect on everything would make the world feel more reactive.
+5. **The gun floats beside a capsule.** A simple arm/pose, and a hose to the machine, would
+   sell "holding a pressure washer" much better.
+6. **Bundle size** (~6.8 MB, ~1.5 MB gzipped): trim Babylon imports before a public release.
 
 ## Deliberately not in v0.1
 
