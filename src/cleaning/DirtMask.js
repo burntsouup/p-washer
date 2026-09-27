@@ -1,4 +1,5 @@
 // @ts-check
+import { ellipseReach, forEachTexelInEllipse, toEllipse } from './brushShape.js';
 
 /**
  * How dirty each spot of a surface is: a grid of numbers from 0 (clean) to 1 (extremely dirty).
@@ -12,7 +13,7 @@
 
 /** A texel at or below this much dirt counts as clean for progress. */
 export const CLEAN_THRESHOLD = 0.05;
-/** Gap between brush stamps along a stroke, as a fraction of the brush radius. */
+/** Gap between brush stamps along a stroke, as a fraction of how far the brush reaches. */
 const STAMP_SPACING = 0.35;
 /** Upper limit on stamps per stroke, so a huge jump can't stall a frame. Each stamp is cheap
  * (a brush 5 texels wide touches ~120 texels), so this only matters for teleport-size jumps. */
@@ -35,7 +36,12 @@ const DEFAULT_RULES = [
   { minStrength: 0.7, rate: 0.6 },
 ];
 
-/** @typedef {{ radius: number, hardness: number }} Brush radius in texels; hardness 0..1. */
+/**
+ * A brush: a circle ({ radius }) or an ellipse ({ radiusX, radiusY, angle }), in texels, plus
+ * how hard its edge is (0..1).
+ *
+ * @typedef {import('./brushShape.js').BrushShape & { hardness: number }} Brush
+ */
 /** @typedef {{ x: number, y: number }} Point */
 
 export class DirtMask {
@@ -143,39 +149,25 @@ export class DirtMask {
    * @returns {number} Total dirt actually removed (useful for feedback like splatter).
    */
   scrub(centerX, centerY, amount, brush, strength = 1) {
-    const { radius, hardness } = brush;
-    const minX = Math.max(0, Math.floor(centerX - radius));
-    const maxX = Math.min(this.width - 1, Math.ceil(centerX + radius));
-    const minY = Math.max(0, Math.floor(centerY - radius));
-    const maxY = Math.min(this.height - 1, Math.ceil(centerY + radius));
-    const radiusSquared = radius * radius;
+    const { hardness } = brush;
     let removed = 0;
-
-    for (let y = minY; y <= maxY; y++) {
-      const dy = y + 0.5 - centerY;
-      for (let x = minX; x <= maxX; x++) {
-        const dx = x + 0.5 - centerX;
-        const distanceSquared = dx * dx + dy * dy;
-        if (distanceSquared >= radiusSquared) continue;
-
-        const i = y * this.width + x;
-        const before = this.dirt[i];
-        if (before === 0) continue;
-        // How hard the water hits this texel: weaker far away and at the spot's soft edge.
-        const force = strength * brushFalloff(Math.sqrt(distanceSquared) / radius, hardness);
-        const rule = this.typeRules[this.type[i]];
-        if (force <= rule.minStrength) {
-          this.resistedTexels++; // too weak to lift this kind of dirt
-          continue;
-        }
-        const effect = ((force - rule.minStrength) / (1 - rule.minStrength)) * rule.rate;
-        const after = Math.max(0, before - amount * effect);
-        this.dirt[i] = after;
-        removed += before - after;
-        if (rule.minStrength > 0) this.toughRemoved += before - after;
-        if (before > CLEAN_THRESHOLD && after <= CLEAN_THRESHOLD) this.markCleaned(i);
+    forEachTexelInEllipse(this.width, this.height, centerX, centerY, toEllipse(brush), (i, t) => {
+      const before = this.dirt[i];
+      if (before === 0) return;
+      // How hard the water hits this texel: weaker far away and at the spot's soft edge.
+      const force = strength * brushFalloff(t, hardness);
+      const rule = this.typeRules[this.type[i]];
+      if (force <= rule.minStrength) {
+        this.resistedTexels++; // too weak to lift this kind of dirt
+        return;
       }
-    }
+      const effect = ((force - rule.minStrength) / (1 - rule.minStrength)) * rule.rate;
+      const after = Math.max(0, before - amount * effect);
+      this.dirt[i] = after;
+      removed += before - after;
+      if (rule.minStrength > 0) this.toughRemoved += before - after;
+      if (before > CLEAN_THRESHOLD && after <= CLEAN_THRESHOLD) this.markCleaned(i);
+    });
 
     if (removed > 0) this.changed = true;
     return removed;
@@ -196,10 +188,15 @@ export class DirtMask {
    * @returns {number} Total dirt actually removed.
    */
   scrubStroke(from, to, amount, brush, strength = 1) {
-    const length = Math.hypot(to.x - from.x, to.y - from.y);
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+    const length = Math.hypot(dx, dy);
+    // Space stamps by how far the brush reaches in the direction of travel, so a thin
+    // ellipse moving sideways still leaves no gaps.
+    const reach = ellipseReach(toEllipse(brush), dx, dy);
     const stamps = Math.min(
       MAX_STAMPS_PER_STROKE,
-      Math.max(1, Math.ceil(length / (brush.radius * STAMP_SPACING))),
+      Math.max(1, Math.ceil(length / (reach * STAMP_SPACING))),
     );
     let removed = 0;
     for (let s = 1; s <= stamps; s++) {

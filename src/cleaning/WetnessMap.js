@@ -1,4 +1,5 @@
 // @ts-check
+import { ellipseReach, forEachTexelInEllipse, toEllipse } from './brushShape.js';
 
 /**
  * How wet each spot of a surface is: 0 (dry) to 1 (soaked). Uses the same grid as the
@@ -33,28 +34,19 @@ export class WetnessMap {
   }
 
   /**
-   * Soaks a round area: fully wet in the middle, with a soft edge. Never makes a spot drier.
+   * Soaks an area: fully wet in the middle, with a soft edge. Never makes a spot drier.
    *
    * @param {number} centerX Texels.
    * @param {number} centerY Texels.
-   * @param {number} radius Texels.
+   * @param {number | import('./brushShape.js').BrushShape} shape A radius, or a circle/ellipse.
    */
-  soak(centerX, centerY, radius) {
-    const minX = Math.max(0, Math.floor(centerX - radius));
-    const maxX = Math.min(this.width - 1, Math.ceil(centerX + radius));
-    const minY = Math.max(0, Math.floor(centerY - radius));
-    const maxY = Math.min(this.height - 1, Math.ceil(centerY + radius));
-    for (let y = minY; y <= maxY; y++) {
-      const dy = y + 0.5 - centerY;
-      for (let x = minX; x <= maxX; x++) {
-        const dx = x + 0.5 - centerX;
-        const t = Math.sqrt(dx * dx + dy * dy) / radius;
-        if (t >= 1) continue;
-        const soaked = t < 0.6 ? 1 : 1 - (t - 0.6) / 0.4;
-        const i = y * this.width + x;
-        if (soaked > this.wetness[i]) this.wetness[i] = soaked;
-      }
-    }
+  soak(centerX, centerY, shape) {
+    const ellipse = toEllipse(typeof shape === 'number' ? { radius: shape } : shape);
+    const { wetness } = this;
+    forEachTexelInEllipse(this.width, this.height, centerX, centerY, ellipse, (i, t) => {
+      const soaked = t < 0.6 ? 1 : 1 - (t - 0.6) / 0.4;
+      if (soaked > wetness[i]) wetness[i] = soaked;
+    });
     this.changed = true;
     this.secondsSinceSoak = 0;
   }
@@ -64,17 +56,20 @@ export class WetnessMap {
    *
    * @param {{ x: number, y: number }} from
    * @param {{ x: number, y: number }} to
-   * @param {number} radius Texels.
+   * @param {number | import('./brushShape.js').BrushShape} shape A radius, or a circle/ellipse.
    */
-  soakStroke(from, to, radius) {
-    const length = Math.hypot(to.x - from.x, to.y - from.y);
+  soakStroke(from, to, shape) {
+    const ellipse = toEllipse(typeof shape === 'number' ? { radius: shape } : shape);
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+    const reach = ellipseReach(ellipse, dx, dy);
     const stamps = Math.min(
       MAX_STAMPS_PER_STROKE,
-      Math.max(1, Math.ceil(length / (radius * STAMP_SPACING))),
+      Math.max(1, Math.ceil(Math.hypot(dx, dy) / (reach * STAMP_SPACING))),
     );
     for (let s = 1; s <= stamps; s++) {
       const t = s / stamps;
-      this.soak(from.x + (to.x - from.x) * t, from.y + (to.y - from.y) * t, radius);
+      this.soak(from.x + dx * t, from.y + dy * t, ellipse);
     }
   }
 
