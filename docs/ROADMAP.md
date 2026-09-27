@@ -131,9 +131,90 @@ driveway · physics engine, hose, puddles, fluid simulation · character art or 
 menus, settings, save/load · gamepad, touch · NPCs, story, multiplayer · TypeScript, ECS,
 WebGPU.
 
+## v0.2 — "Every surface is a new way to clean"
+
+Goal: make the core interaction itself more varied before adding progression. Tough dirt,
+a rotating fan, a vertical fence and a paved patio should each change _how_ you clean, and a
+second job should tie them together. Same rules as v0.1: small milestones, each playable, pure
+logic tested, feel checked by playing.
+
+### 11. Dirt-weighted progress
+
+- [ ] A spot counts for as much as the dirt it started with, so an oil stain (1.0) counts 4×
+      a light film (0.25). Spots still have to become fully clean to count
+- [ ] Tests: weighting, clean-threshold still required, 100% only when everything is clean
+
+### 12. Tough dirt: moss
+
+- [ ] A per-texel dirt _type_; moss only comes off above a minimum spray strength (so you have
+      to get close) and resists a little even then
+- [ ] Moss draws green; texture grows to 4 channels (dirt, wetness, type, spare)
+- [ ] Tests: weak spray leaves moss, strong spray removes it, other dirt unaffected
+
+### 13. Fan-shaped spray you can rotate
+
+- [ ] Elliptical brush that matches the flat fan, oriented on the surface; `Q` turns the fan
+      between horizontal and vertical (the beam turns too)
+- [ ] Tests: elliptical stamp shape, rotated strokes stay gap-free
+
+### 14. Performance headroom for more surfaces
+
+- [ ] Track the wet area so drying and uploads only touch what changed (not every texel)
+- [ ] Measure frame time with ~3× today's texels; must stay at 60 fps
+- [ ] Tests: wet-area bounds grow on soak, shrink to nothing when dry
+
+### 15. The fence: a vertical surface
+
+- [ ] Backyard-side fence faces become cleanable (flat panels with clean UVs)
+- [ ] Weathered grey wood that cleans back to warm brown, moss and mud splash along the bottom
+- [ ] Juice: wet streaks running down vertical surfaces
+
+### 16. The patio: pavers and grout
+
+- [ ] Paver pattern with grout lines; grime and moss collect in the joints and need close,
+      precise spraying
+- [ ] Dirt drawn over a textured clean surface (not just a flat color)
+
+### 17. Second job: the backyard
+
+- [ ] Jobs become data: "Driveway", then "Backyard" (fence + patio) unlocks after it
+- [ ] HUD shows the current job; the completion card offers the next one
+- [ ] Tests: job order, unlocking, per-job progress
+
+### 18. Tuning + playtest pass
+
+- [ ] Tuning panel entries for the new settings; pacing simulation for the backyard job
+- [ ] Playtest against the checklist below; record findings
+
+### v0.2 success checklist
+
+- [ ] Tough dirt makes "get closer" a meaningful, satisfying choice
+- [ ] Rotating the fan feels useful, not like a gimmick
+- [ ] Cleaning the vertical fence feels as good as the driveway
+- [ ] Working the grout lines feels precise and rewarding
+- [ ] Heavy stains feel worth cleaning (and progress reflects them)
+- [ ] Moving from the first job to the second feels natural
+- [ ] Still 60 fps with every surface dirty
+
+### v0.2 risks
+
+- **Fan orientation on a surface** needs each surface's UV directions in world space. Keep
+  cleanables as flat panels with known axes; revisit for curved objects (cars) later.
+- **Texel budget**: the fence and patio roughly triple today's ~131k texels. Milestone 14
+  exists so drying and uploads scale with the _wet area_, not the total.
+- **Wet streaks** (15) could become a time sink; timebox them and cut if needed.
+
+## Deliberately not in v0.2
+
+Money, shop, upgrades · more than two jobs · house walls, cars, or anything needing authored
+UVs · pressure settings, water consumption · character art, hose, real audio (see Later) ·
+menus beyond a simple job flow · save/load.
+
 ## Later (ideas, not commitments)
 
-- v0.2: clean walls/fence/car (requires authored UVs), second surface material
-- A hose from the machine to the gun (visual first; maybe a length limit later)
-- Earn money per job, simple upgrade (wider nozzle / more pressure)
+- v0.3 progression: money per job, a shop with one or two upgrades (turbo nozzle, surface
+  cleaner attachment), more jobs
+- Polish & sharing: CC0 audio recordings, a hose from the machine to the gun, a simple arm
+  pose, wet marks on every surface, title screen, itch.io page
+- Clean house walls, cars (requires authored UVs, e.g. from Blender)
 - Trim the Babylon.js bundle before a public itch.io release
