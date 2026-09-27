@@ -21,15 +21,15 @@ export class CleanableSurface {
    */
   constructor(scene, { mesh, width, length, dirtAt }) {
     this.mesh = mesh;
+    this.width = width;
+    this.length = length;
+    this.dirtAt = dirtAt;
     this.grid = gridSize(width, length, config.cleaning.texelsPerMeter);
     this.texelsPerMeter = this.grid.width / width; // actual, after rounding to whole texels
 
     this.mask = new DirtMask(this.grid.width, this.grid.height);
-    this.mask.fill((x, y) => {
-      const point = texelCenterInMeters(x, y, this.grid, width, length);
-      return dirtAt(point.x, point.y);
-    });
     this.wetness = new WetnessMap(this.grid.width, this.grid.height);
+    this.fillWithStartingDirt();
 
     // Two bytes per texel: red = dirt, green = wetness (0..255 each).
     this.pixels = new Uint8Array(this.grid.width * this.grid.height * 2);
@@ -53,6 +53,15 @@ export class CleanableSurface {
     this.plugin = new DirtMaterialPlugin(mesh.material, this.texture);
 
     this.uploadIfChanged();
+  }
+
+  /** Makes the surface as dirty (and dry) as it was at the start, for another go. */
+  fillWithStartingDirt() {
+    this.mask.fill((x, y) => {
+      const point = texelCenterInMeters(x, y, this.grid, this.width, this.length);
+      return this.dirtAt(point.x, point.y);
+    });
+    this.wetness.dryCompletely();
   }
 
   /**

@@ -29,6 +29,89 @@
   white-space: nowrap;
 }
 
+/* Job objective and progress bar, top center. */
+.objective {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 280px;
+  padding: 8px 14px 10px;
+  border-radius: 10px;
+  background: rgb(20 24 30 / 0.6);
+  text-align: center;
+}
+
+.objective-title {
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.progress-bar {
+  height: 8px;
+  border-radius: 4px;
+  background: rgb(255 255 255 / 0.18);
+  overflow: hidden;
+}
+
+.progress-fill {
+  width: 0;
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #6ec6ff, #b8f0ff);
+  transition: width 0.25s ease-out;
+}
+
+.progress-label {
+  margin-top: 4px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+}
+
+.objective.is-complete .progress-fill {
+  background: linear-gradient(90deg, #7be495, #d4ffb0);
+}
+
+/* "Job complete!" card. It pops in, and clicks pass through so you can keep playing. */
+.job-complete {
+  position: absolute;
+  top: 26%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 18px 32px;
+  border-radius: 14px;
+  background: rgb(20 24 30 / 0.75);
+  text-align: center;
+  animation: pop-in 0.45s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.job-complete h2 {
+  margin: 0 0 6px;
+  font-size: 32px;
+  color: #b8f7c6;
+}
+
+.job-complete p {
+  margin: 4px 0;
+  font-size: 16px;
+}
+
+.job-complete-hint {
+  opacity: 0.75;
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+}
+
 .play-prompt {
   position: absolute;
   top: 50%;

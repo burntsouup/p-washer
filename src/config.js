@@ -85,6 +85,14 @@ export const config = {
     impact: 0.22, // water hitting a surface
     strip: 0.3, // gritty crackle of dirt coming off
     fullStripRate: 300, // dirt removed per second that gives the loudest stripping sound
+    chime: 0.22, // "job complete" jingle
     muteKey: 'KeyM',
+  },
+  job: {
+    completeAt: 0.98, // fraction of dirt that counts as done; the rest fades away for you
+    finishFadeTime: 1.2, // seconds for leftover specks to fade out when the job completes
+    highlightKey: 'KeyF', // hold to highlight the dirt that's left
+    highlightColor: '#ff3df2', // bright magenta: stands out against concrete and grime
+    resetKey: 'KeyR', // after completion: start over with fresh dirt
   },
 };

@@ -179,6 +179,33 @@ export class AudioSystem {
     thump.start(now);
     thump.stop(now + 0.25);
   }
+
+  /** "Job complete!": a bright rising arpeggio (C, E, G, high C) with a soft shimmer. */
+  playChime() {
+    if (!this.context || !this.master) return;
+    const context = this.context;
+    const start = context.currentTime + 0.05;
+    const notes = [523.25, 659.25, 783.99, 1046.5];
+    notes.forEach((frequency, i) => {
+      const at = start + i * 0.1;
+      for (const [type, pitch, level] of /** @type {const} */ ([
+        ['sine', 1, 1],
+        ['triangle', 2, 0.25], // an octave up, quietly: the shimmer
+      ])) {
+        const tone = context.createOscillator();
+        tone.type = type;
+        tone.frequency.value = frequency * pitch;
+        const envelope = context.createGain();
+        envelope.gain.setValueAtTime(0.0001, at);
+        envelope.gain.exponentialRampToValueAtTime(config.audio.chime * level, at + 0.01);
+        envelope.gain.exponentialRampToValueAtTime(0.0001, at + 1.4);
+        tone.connect(envelope);
+        envelope.connect(this.master);
+        tone.start(at);
+        tone.stop(at + 1.5);
+      }
+    });
+  }
 }
 
 /**

@@ -24,6 +24,12 @@ export class DirtMaterialPlugin extends MaterialPluginBase {
     this.wetDarkening = wetDarkening;
     this.skyColor = Color3.FromHexString(config.render.sky.horizon);
     this.sunDirection = new Vector3(...config.render.sun.direction).normalize();
+    this.highlightColor = Color3.FromHexString(config.job.highlightColor);
+    /** 0..1: how strongly to highlight remaining dirt. Changes every frame while held. */
+    this.highlight = 0;
+    // Opt in to hardBindForSubMesh (below), which Babylon only calls for plugins that ask.
+    // Must be set before the plugin is enabled.
+    this.registerForExtraEvents = true;
     this._enable(true);
   }
 
@@ -58,6 +64,8 @@ export class DirtMaterialPlugin extends MaterialPluginBase {
         { name: 'wetSkyColor', size: 3, type: 'vec3' },
         { name: 'wetSunDirection', size: 3, type: 'vec3' },
         { name: 'wetDarkening', size: 1, type: 'float' },
+        { name: 'dirtHighlightColor', size: 3, type: 'vec3' },
+        { name: 'dirtHighlight', size: 1, type: 'float' },
       ],
       fragment: `
         uniform vec3 dirtColorLight;
@@ -65,7 +73,9 @@ export class DirtMaterialPlugin extends MaterialPluginBase {
         uniform vec3 dirtColorOil;
         uniform vec3 wetSkyColor;
         uniform vec3 wetSunDirection;
-        uniform float wetDarkening;`,
+        uniform float wetDarkening;
+        uniform vec3 dirtHighlightColor;
+        uniform float dirtHighlight;`,
     };
   }
 
@@ -77,7 +87,18 @@ export class DirtMaterialPlugin extends MaterialPluginBase {
     uniformBuffer.updateColor3('wetSkyColor', this.skyColor);
     uniformBuffer.updateVector3('wetSunDirection', this.sunDirection);
     uniformBuffer.updateFloat('wetDarkening', this.wetDarkening);
+    uniformBuffer.updateColor3('dirtHighlightColor', this.highlightColor);
     uniformBuffer.setTexture('dirtSampler', this.dirtTexture);
+  }
+
+  /**
+   * Like bindForSubMesh, but Babylon calls this every frame (bindForSubMesh can be skipped
+   * when nothing about the material changed), so values that change each frame go here.
+   *
+   * @param {import('@babylonjs/core').UniformBuffer} uniformBuffer
+   */
+  hardBindForSubMesh(uniformBuffer) {
+    uniformBuffer.updateFloat('dirtHighlight', this.highlight);
   }
 
   /** @param {import('@babylonjs/core').BaseTexture[]} activeTextures */
@@ -120,6 +141,10 @@ export class DirtMaterialPlugin extends MaterialPluginBase {
           vec3 halfway = normalize(viewDirectionW - wetSunDirection);
           float sunGlint = pow(max(dot(normalW, halfway), 0.0), 80.0) * 0.6;
           color.rgb += surfaceWetness * (wetSkyColor * skySheen + vec3(sunGlint));
+          // "Show remaining dirt": paint every spot that still counts as dirty (above the
+          // 0.05 clean threshold), including specks too faint to see normally.
+          float remaining = step(0.05, dirtAndWetness.r);
+          color.rgb = mix(color.rgb, dirtHighlightColor, dirtHighlight * remaining);
         #endif
       `,
     };
