@@ -80,6 +80,9 @@ the driveway (and anything cleanable) as separate meshes with clean UVs.
 so dirty surfaces keep normal lighting and shadows. The dirt grid is uploaded as a one-byte-
 per-texel texture with mipmaps (~0.1 ms per upload). The alternative, coloring an RGBA texture
 on the CPU, is simpler but can't add wetness or sharp detail later without a rewrite.
+**Uploads (v0.2):** each grid tracks the rectangle that changed, and wetness also tracks the
+area that might still be wet, so drying and uploads scale with what you're spraying, not with
+total surface size (`updateTextureData` uploads just that rectangle, then regenerates mipmaps).
 **Gotcha:** the plugin must request UVs (`_needUVs`, `MAINUV1`) because the material has no
 other textures. `RawTexture.CreateRTexture` defaults to float data, so pass the byte type.
 Values that change every frame (the highlight) must be set in `hardBindForSubMesh`, which

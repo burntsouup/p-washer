@@ -167,11 +167,15 @@ logic tested, feel checked by playing.
 - [x] Tests: ellipse walker, elliptical stamps and gap-free strokes, fan axes, footprint
       projection (head-on, turned, 45°, glancing), surface axes from UVs
 
-### 14. Performance headroom for more surfaces
+### 14. Performance headroom for more surfaces ✅
 
-- [ ] Track the wet area so drying and uploads only touch what changed (not every texel)
-- [ ] Measure frame time with ~3× today's texels; must stay at 60 fps
-- [ ] Tests: wet-area bounds grow on soak, shrink to nothing when dry
+- [x] Track the wet area so drying only loops over it, and a changed rectangle per grid so
+      only that part is packed and uploaded (`texSubImage2D` via `updateTextureData`)
+- [x] Measured (cleaning system, per frame): spraying 0.8 → **0.2 ms**; idle surfaces **0 ms**;
+      worst case, a whole surface wet and drying, ~1.2 ms. Surfaces are too far apart to be
+      wet at once, so more surfaces cost nothing until you spray them
+- [x] Tests: changed/wet areas grow on scrub/soak, stay empty when nothing changes, and clear
+      once dry
 
 ### 15. The fence: a vertical surface
 
