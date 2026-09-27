@@ -82,3 +82,11 @@ per-texel texture with mipmaps (~0.1 ms per upload). The alternative, coloring a
 on the CPU, is simpler but can't add wetness or sharp detail later without a rewrite.
 **Gotcha:** the plugin must request UVs (`_needUVs`, `MAINUV1`) because the material has no
 other textures. `RawTexture.CreateRTexture` defaults to float data, so pass the byte type.
+
+## 12. Two-ray aiming and distance falloff
+
+**Why:** The crosshair ray (from the camera) decides _what_ you aim at; a second ray from the
+nozzle to that point is the actual water. This keeps third-person aiming intuitive while
+letting walls and props block the spray realistically. With distance, the spot widens and
+weakens linearly, so throughput (width × strength) peaks around 2 m: close is precise, far is
+broad but slow, beyond 6 m nothing happens. **Revisit:** in the tuning pass (Milestone 10).
