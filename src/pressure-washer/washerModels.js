@@ -1,11 +1,6 @@
-import {
-  Color3,
-  Mesh,
-  MeshBuilder,
-  StandardMaterial,
-  TransformNode,
-  VertexBuffer,
-} from '@babylonjs/core';
+import { Color3, MeshBuilder, StandardMaterial, TransformNode } from '@babylonjs/core';
+
+/** @typedef {import('@babylonjs/core').Mesh} Mesh */
 
 /**
  * Placeholder 3D models for the pressure washer, built from simple shapes.
@@ -138,46 +133,6 @@ export function createWand(scene, name) {
   tip.rotation.x = Math.PI / 2;
 
   return { root, meshes: root.getChildMeshes() };
-}
-
-/**
- * The water stream: a cone from the nozzle (at the origin) to 1 unit along +z.
- * Stretch it to the hit distance with scaling.z, and set its far-end width with x/y.
- * It fades from fairly solid at the nozzle to a faint spray at the far end.
- *
- * @param {import('@babylonjs/core').Scene} scene
- */
-export function createBeam(scene) {
-  const beam = MeshBuilder.CreateCylinder(
-    'sprayBeam',
-    { diameterTop: 1, diameterBottom: 0.05, height: 1, tessellation: 16, cap: Mesh.NO_CAP },
-    scene,
-  );
-  // Move the base to the origin, then tip it over so it runs along +z instead of +y.
-  beam.position.y = 0.5;
-  beam.bakeCurrentTransformIntoVertices();
-  beam.rotation.x = Math.PI / 2;
-  beam.bakeCurrentTransformIntoVertices();
-
-  // Fade out along the length using per-vertex transparency.
-  const positions = beam.getVerticesData(VertexBuffer.PositionKind) ?? [];
-  const colors = [];
-  for (let i = 0; i < positions.length; i += 3) {
-    const along = positions[i + 2]; // 0 at the nozzle, 1 at the far end
-    colors.push(0.85, 0.94, 1, 0.7 - 0.55 * along);
-  }
-  beam.setVerticesData(VertexBuffer.ColorKind, colors);
-  beam.hasVertexAlpha = true;
-
-  const material = new StandardMaterial('sprayBeamMat', scene);
-  material.disableLighting = true;
-  material.emissiveColor = Color3.White();
-  material.diffuseColor = Color3.Black();
-  material.backFaceCulling = false; // see the inside of the cone too
-  beam.material = material;
-  beam.isPickable = false;
-  beam.isVisible = false;
-  return beam;
 }
 
 /**

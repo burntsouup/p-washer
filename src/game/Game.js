@@ -1,4 +1,5 @@
 import { Engine, Scene } from '@babylonjs/core';
+import { AudioSystem } from '../audio/AudioSystem.js';
 import { ThirdPersonCamera } from '../camera/ThirdPersonCamera.js';
 import { CleanableSurface } from '../cleaning/CleanableSurface.js';
 import { CleaningSystem } from '../cleaning/CleaningSystem.js';
@@ -48,6 +49,7 @@ export class Game {
       this.cleaning,
       this.level.washerSpot,
     );
+    this.audio = new AudioSystem();
     this.hud = new Hud(hudRoot, this.input);
     this.debugOverlay = new DebugOverlay(this.engine, this.scene, hudRoot);
 
@@ -73,7 +75,9 @@ export class Game {
     this.player.update(dt, this.camera.yaw, this.washer.isSpraying);
     this.camera.update(dt); // follow the player to their new position
     this.washer.update(dt); // aim from the new camera view, then spray
-    this.cleaning.update(); // send any changed dirt to the GPU
+    this.cleaning.update(dt); // dry surfaces and send any changes to the GPU
+    if (this.input.wasPressed(config.audio.muteKey)) this.audio.toggleMute();
+    this.audio.update(dt, this.washer);
     this.hud.update(this.washer.prompt);
     this.debugOverlay.update(dt);
   }

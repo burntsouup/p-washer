@@ -29,6 +29,7 @@ export class Hud {
         <dt>Shift</dt><dd>Run</dd>
         <dt>E</dt><dd>Pick up the pressure washer</dd>
         <dt>Hold click</dt><dd>Spray</dd>
+        <dt>M</dt><dd>Mute / unmute</dd>
         <dt>Esc</dt><dd>Release the mouse</dd>
       </dl>`;
 

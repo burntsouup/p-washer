@@ -1,7 +1,8 @@
 import { Color3, Ray, Vector3 } from '@babylonjs/core';
 import { config } from '../config.js';
+import { SprayEffects } from './SprayEffects.js';
 import { aimDirection, groundDistance, sprayAtDistance } from './sprayMath.js';
-import { createBeam, createWand, createWasherUnit, WAND_TIP_OFFSET } from './washerModels.js';
+import { createWand, createWasherUnit, WAND_TIP_OFFSET } from './washerModels.js';
 
 /** How far the crosshair looks for something to aim at, in meters. */
 const AIM_DISTANCE = 40;
@@ -41,14 +42,20 @@ export class PressureWasher {
     this.wand = createWand(scene, 'heldWand');
     this.wand.root.setEnabled(false);
     for (const mesh of this.wand.meshes) shadows.addShadowCaster(mesh);
-    this.beam = createBeam(scene);
+    this.effects = new SprayEffects(scene);
 
     this.isEquipped = false;
+    /** True only on the frame the gun was picked up (for a pickup sound). */
+    this.justEquipped = false;
     this.isSpraying = false;
+    /** Whether the water is landing on something (vs. spraying into the air). */
+    this.isHitting = false;
+    /** Spray strength (0..1) where the water lands. */
+    this.sprayStrength = 0;
     /** Text for the HUD to show, or null. */
     this.prompt = /** @type {string | null} */ (null);
-    /** Dirt removed on the last frame; later milestones use it for splatter and sound. */
-    this.dirtRemoved = 0;
+    /** Dirt removed per second right now, for splatter and sound. */
+    this.dirtRate = 0;
     this.time = 0;
 
     // Reused every frame to avoid creating garbage.
@@ -65,6 +72,8 @@ export class PressureWasher {
   /** @param {number} dt Seconds since the previous frame. */
   update(dt) {
     this.time += dt;
+    this.justEquipped = false;
+    this.effects.update(dt);
     if (!this.isEquipped) {
       this.updatePickup();
       return;
@@ -87,6 +96,7 @@ export class PressureWasher {
 
     if (inReach && this.input.wasPressed('KeyE')) {
       this.isEquipped = true;
+      this.justEquipped = true;
       this.prompt = null;
       this.unit.bodyMaterial.emissiveColor = Color3.Black();
       this.unit.restingWand.root.setEnabled(false);
@@ -148,25 +158,31 @@ export class PressureWasher {
     const distance = landed && hit ? hit.distance : settings.maxRange;
     const { radius, strength } = sprayAtDistance(distance, settings);
 
-    this.dirtRemoved = landed ? this.cleaning.spray(hit, dt, { radius, strength }) : 0;
+    const removed = landed ? this.cleaning.spray(hit, dt, { radius, strength }) : 0;
     if (!landed) this.cleaning.stopSpraying();
+    this.dirtRate = dt > 0 ? removed / dt : 0;
     this.isSpraying = true;
+    this.isHitting = landed;
+    this.sprayStrength = landed ? strength : 0;
 
-    // Draw the stream from the nozzle to where it lands, flickering slightly so it feels alive.
-    const beam = this.beam;
-    beam.isVisible = true;
-    beam.position.copyFrom(this.nozzle);
-    this.lookTarget.copyFrom(this.direction).scaleInPlace(distance).addInPlace(this.nozzle);
-    beam.lookAt(this.lookTarget);
-    const width = radius * 2 * (0.9 + Math.random() * 0.2);
-    beam.scaling.set(width, width, distance);
+    this.effects.show({
+      nozzle: this.nozzle,
+      direction: this.direction,
+      distance,
+      radius,
+      strength,
+      hitNormal: landed && hit ? hit.getNormal(true) : null,
+      dirtRate: this.dirtRate,
+    });
   }
 
   stopSpraying() {
     if (!this.isSpraying) return;
     this.isSpraying = false;
-    this.dirtRemoved = 0;
-    this.beam.isVisible = false;
+    this.isHitting = false;
+    this.sprayStrength = 0;
+    this.dirtRate = 0;
+    this.effects.hide();
     this.cleaning.stopSpraying();
   }
 }

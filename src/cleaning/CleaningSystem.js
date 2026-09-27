@@ -40,6 +40,8 @@ export class CleaningSystem {
     const brush = { radius: surface.metersToTexels(radius), hardness: settings.brushHardness };
     const amount = settings.cleanRate * strength * dt;
     const removed = surface.mask.scrubStroke(from, point, amount, brush);
+    // Water spreads a little beyond where it cleans.
+    surface.wetness.soakStroke(from, point, brush.radius * settings.wetSpread);
     this.lastHit = { surface, point };
     return removed;
   }
@@ -60,7 +62,9 @@ export class CleaningSystem {
     return dirty === 0 ? 1 : cleaned / dirty;
   }
 
-  update() {
-    for (const surface of this.surfaces.values()) surface.uploadIfChanged();
+  /** @param {number} dt Seconds since the previous frame. */
+  update(dt) {
+    // Dry every surface a little and send any changes to the GPU.
+    for (const surface of this.surfaces.values()) surface.update(dt);
   }
 }
