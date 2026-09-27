@@ -167,7 +167,7 @@ halved per-pass cleaning, so `cleanRate` went from 3 to 4.5. First pass (simulat
 ~75% (≈ v0.1), upright ~52% but ~40% faster coverage. Pointing straight at dirt is now
 stronger than before, which fits "get closer, aim straight".
 
-## 18. Upright surfaces: cleanable panels in front of solid geometry
+## 18. Textured cleanable surfaces: the fence and the patio
 
 **Why:** The fence is merged into one mesh for collisions and one draw call, so its cleanable
 side is a separate flat panel (a plane with clean UVs) placed just in front of it. Posts stick
@@ -176,6 +176,10 @@ colors (`palette`: silvery weathering and mud on wood instead of concrete dust),
 to a `job`. The clean look comes from the material: a warm wood color times a neutral grey
 board texture drawn in code, so dirt blends over the same boards. On upright surfaces
 (detected from the texture's u/v directions) some water trickles down as thin wet streaks.
+The patio works the same way on the ground: pavers drawn in code with a stone color, and
+`paverAt()` shared by the texture and the dirt so grime and moss sit exactly in the joints.
+The sun was raised to ~60° (and dimmed slightly to keep sun + fill ≈ 1) so the house's shadow
+no longer covers most of the patio.
 **Gotchas:** (1) Cloning a material also clones its textures, and a cloned canvas texture
 starts blank, so a surface's material is only copied if another mesh shares it. (2) A
 misnamed texture parameter silently produced `NaN` sizes and no boards; the texture helper
