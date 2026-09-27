@@ -145,3 +145,21 @@ Grime: `{ 0, 1 }`. Moss: `{ 0.7, 0.6 }` (`config.cleaning.moss`), so it resists 
 lift, the HUD says so, so it never feels like a bug. Types live in the texture's blue channel
 for drawing (green instead of brown).
 **Revisit when:** adding more types (e.g. paint, rust). The rule table already supports them.
+
+## 17. A flat fan you can turn, with angle-aware footprints
+
+**Why:** A round spot made every stroke the same. Real nozzles spray a flat fan, and turning it
+is a real technique. The fan keeps the area of a round spot of the same radius, squashed by
+`fanFlatness` (0.45). Where it lands is computed properly (`sprayFootprint`): each fan axis is
+followed along the spray onto the surface, so hitting at a low angle stretches the footprint
+(capped by `maxStretch`), and `density` spreads the same water more thinly over the bigger
+area, so angled spraying isn't an exploit. Dirt and wetness share one ellipse walker
+(`brushShape.js`), and strokes space stamps by how far the ellipse reaches in the direction of
+travel. Each surface finds its texture's u/v directions from its own mesh.
+**The choice:** sweeping side to side with the fan **upright** clears a tall, shallow swath
+(fast coverage, good for film); **flat** gives a shorter, deeper one (better for grime).
+Neither is simply better. `Q` turns it, and a bar through the crosshair shows which way.
+**Tuning:** the angle-aware footprint spreads a typical 30° spray over ~2× the area, which
+halved per-pass cleaning, so `cleanRate` went from 3 to 4.5. First pass (simulated): flat
+~75% (≈ v0.1), upright ~52% but ~40% faster coverage. Pointing straight at dirt is now
+stronger than before, which fits "get closer, aim straight".
