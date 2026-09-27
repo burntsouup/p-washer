@@ -3,9 +3,9 @@ import { config } from '../config.js';
 /**
  * Knows every cleanable surface and applies spray hits to them.
  *
- * Whatever does the spraying (the debug brush now, the pressure washer later) raycasts into
- * the scene and hands the hit to `spray()`. This class turns that into dirt removal,
- * continuing the stroke from last frame's hit so fast sweeps leave no gaps.
+ * The pressure washer raycasts into the scene and hands the hit to `spray()`. This class
+ * turns that into dirt removal, continuing the stroke from last frame's hit so fast sweeps
+ * leave no gaps.
  */
 export class CleaningSystem {
   constructor() {
@@ -23,9 +23,10 @@ export class CleaningSystem {
   /**
    * @param {import('@babylonjs/core').PickingInfo | null} hit Where the spray landed.
    * @param {number} dt Seconds since the previous frame.
+   * @param {{ radius: number, strength: number }} spray Spot radius in meters; strength 0..1.
    * @returns {number} How much dirt came off this frame (0 if it missed every surface).
    */
-  spray(hit, dt) {
+  spray(hit, dt, { radius, strength }) {
     const surface = hit?.hit && hit.pickedMesh ? this.surfaces.get(hit.pickedMesh) : undefined;
     const uv = surface ? hit?.getTextureCoordinates() : null;
     if (!surface || !uv) {
@@ -36,11 +37,9 @@ export class CleaningSystem {
     const settings = config.cleaning;
     const point = surface.uvToTexel(uv.x, uv.y);
     const from = this.lastHit?.surface === surface ? this.lastHit.point : point;
-    const brush = {
-      radius: surface.metersToTexels(settings.sprayRadius),
-      hardness: settings.brushHardness,
-    };
-    const removed = surface.mask.scrubStroke(from, point, settings.cleanRate * dt, brush);
+    const brush = { radius: surface.metersToTexels(radius), hardness: settings.brushHardness };
+    const amount = settings.cleanRate * strength * dt;
+    const removed = surface.mask.scrubStroke(from, point, amount, brush);
     this.lastHit = { surface, point };
     return removed;
   }

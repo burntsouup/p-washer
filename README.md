@@ -16,7 +16,8 @@ JavaScript.
 | Mouse         | Look around                                    |
 | WASD / arrows | Move                                           |
 | Shift         | Run                                            |
-| Hold click    | Clean under the crosshair (until the washer)   |
+| E             | Pick up the pressure washer (when close)       |
+| Hold click    | Spray                                          |
 | Esc           | Release the mouse                              |
 | `` ` `` (key) | Toggle the Babylon Inspector (dev builds only) |
 
@@ -53,13 +54,14 @@ src/
   player/              The player character (movement.js is the tested, pure part)
   camera/              Third-person camera (cameraMath.js is the tested, pure part)
   cleaning/            Dirt: DirtMask (grid + brush), patterns, the dirt shader, CleaningSystem
-  ui/                  HTML overlay: crosshair, "click to play", FPS
+  pressure-washer/     The machine, the spray gun, aiming, and the water beam
+  ui/                  HTML overlay: crosshair, prompts, "click to play", FPS
 docs/
   ROADMAP.md           Milestones and checklists (our plan)
   DECISIONS.md         Why things are the way they are
 ```
 
-Folders for `pressure-washer/` and `audio/` are added by the milestone that needs them.
+The `audio/` folder is added by the milestone that needs it.
 
 **Rule of thumb:** files that import Babylon.js are glue. Game logic and math go in "pure"
 files (no Babylon imports) with a `*.test.js` file next to them.

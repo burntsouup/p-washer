@@ -58,6 +58,8 @@ export function createBackyard(scene, shadows) {
 
   // Start at the street end of the driveway, facing the garage (yaw 0 = toward +z).
   const spawn = { position: [DRIVEWAY.centerX, 0, SIDEWALK.back + 1], yaw: 0 };
+  // The pressure washer waits on the lawn beside the driveway, just ahead and to the right.
+  const washerSpot = { position: [DRIVEWAY.centerX + 3.2, 0, SIDEWALK.back + 2.5], yaw: -0.5 };
 
   // Surfaces the player can clean. Their UVs run 0..1 across the mesh: u across (x) and
   // v from the street end to the garage end (z), matching dirtAt's x and y in meters.
@@ -70,7 +72,7 @@ export function createBackyard(scene, shadows) {
     },
   ];
 
-  return { ground, driveway, spawn, cleanables };
+  return { ground, driveway, spawn, washerSpot, cleanables };
 }
 
 /** @param {Greybox} kit */

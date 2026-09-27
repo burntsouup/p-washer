@@ -58,11 +58,14 @@ washing the driveway should feel good. See the success checklist at the bottom.
       washer in Milestone 7)
 - [x] Tests: UV → texel and meters → texels conversion
 
-### 7. Pressure washer: pick up, equip, spray
+### 7. Pressure washer: pick up, equip, spray ✅
 
-- [ ] Washer prop with an "E to pick up" prompt in range
-- [ ] Hold left mouse to spray; camera ray finds the target, nozzle ray does the cleaning
-- [ ] Max range, strength falls off with distance, basic water beam
+- [x] Washer machine on the lawn that glows and shows "Press E to pick up" when you're close
+- [x] Hold left mouse to spray; camera ray finds the target, nozzle ray does the cleaning
+      (walls between the gun and the target block the water)
+- [x] Max range (6 m); the spot widens and weakens with distance, so ~2 m is the sweet spot
+- [x] Basic water beam; the body faces the aim and moves slower while spraying
+- [x] Tests: spray falloff, aim direction and fallbacks
 
 ### 8. Spray feedback
 
@@ -102,5 +105,6 @@ WebGPU.
 ## Later (ideas, not commitments)
 
 - v0.2: clean walls/fence/car (requires authored UVs), second surface material
+- A hose from the machine to the gun (visual first; maybe a length limit later)
 - Earn money per job, simple upgrade (wider nozzle / more pressure)
 - Trim the Babylon.js bundle before a public itch.io release

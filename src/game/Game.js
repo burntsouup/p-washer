@@ -6,13 +6,11 @@ import { config } from '../config.js';
 import { createBackyard } from '../environment/Backyard.js';
 import { createLighting, createSky } from '../environment/lighting.js';
 import { Player } from '../player/Player.js';
+import { PressureWasher } from '../pressure-washer/PressureWasher.js';
 import { DebugOverlay } from '../ui/DebugOverlay.js';
 import { Hud } from '../ui/Hud.js';
 import { Input } from './Input.js';
 import { toDeltaSeconds } from './time.js';
-
-/** How far the temporary crosshair brush reaches, in meters. */
-const DEBUG_BRUSH_RANGE = 25;
 
 /**
  * Owns the engine, the scene, and every game system.
@@ -41,6 +39,15 @@ export class Game {
 
     this.player = new Player(this.scene, shadows, this.input, this.level.spawn);
     this.camera = new ThirdPersonCamera(this.scene, this.input, this.player, this.level.spawn.yaw);
+    this.washer = new PressureWasher(
+      this.scene,
+      shadows,
+      this.input,
+      this.player,
+      this.camera,
+      this.cleaning,
+      this.level.washerSpot,
+    );
     this.hud = new Hud(hudRoot, this.input);
     this.debugOverlay = new DebugOverlay(this.engine, this.scene, hudRoot);
 
@@ -62,27 +69,12 @@ export class Game {
    * @param {number} dt Seconds since the previous frame.
    */
   update(dt) {
-    this.player.update(dt, this.camera.yaw); // move relative to where the camera looks
-    this.camera.update(dt); // then follow the player to their new position
-    this.updateDebugBrush(dt);
+    // Move relative to where the camera looks (and face the aim while spraying).
+    this.player.update(dt, this.camera.yaw, this.washer.isSpraying);
+    this.camera.update(dt); // follow the player to their new position
+    this.washer.update(dt); // aim from the new camera view, then spray
     this.cleaning.update(); // send any changed dirt to the GPU
-    this.hud.update();
+    this.hud.update(this.washer.prompt);
     this.debugOverlay.update(dt);
-  }
-
-  /**
-   * Temporary stand-in for the pressure washer (Milestone 7 replaces it): hold the left
-   * mouse button to clean whatever is under the crosshair.
-   *
-   * @param {number} dt
-   */
-  updateDebugBrush(dt) {
-    if (!this.input.isMouseDown(0)) {
-      this.cleaning.stopSpraying();
-      return;
-    }
-    const ray = this.camera.babylonCamera.getForwardRay(DEBUG_BRUSH_RANGE);
-    const hit = this.scene.pickWithRay(ray, (mesh) => mesh.isPickable && mesh.isVisible);
-    this.cleaning.spray(hit, dt);
   }
 }
