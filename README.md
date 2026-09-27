@@ -21,6 +21,7 @@ JavaScript.
 | Hold F        | Highlight the dirt that's left                 |
 | R             | Start over (after the job is done)             |
 | M             | Mute / unmute                                  |
+| T             | Tuning panel (live sliders; "Copy changes")    |
 | Esc           | Release the mouse                              |
 | `` ` `` (key) | Toggle the Babylon Inspector (dev builds only) |
 
