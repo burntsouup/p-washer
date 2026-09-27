@@ -56,6 +56,7 @@ export class Hud {
         <dt>Hold F</dt><dd>Highlight the dirt that's left</dd>
         <dt>R</dt><dd>Start over (after the job is done)</dd>
         <dt>M</dt><dd>Mute / unmute</dd>
+        <dt>T</dt><dd>Tuning panel</dd>
         <dt>Esc</dt><dd>Release the mouse</dd>
       </dl>`;
 

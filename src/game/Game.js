@@ -11,6 +11,7 @@ import { Player } from '../player/Player.js';
 import { PressureWasher } from '../pressure-washer/PressureWasher.js';
 import { DebugOverlay } from '../ui/DebugOverlay.js';
 import { Hud } from '../ui/Hud.js';
+import { TuningPanel } from '../ui/TuningPanel.js';
 import { Celebration } from './Celebration.js';
 import { Input } from './Input.js';
 import { Job } from './job.js';
@@ -59,6 +60,7 @@ export class Game {
     this.time = 0;
     this.hud = new Hud(hudRoot, this.input);
     this.debugOverlay = new DebugOverlay(this.engine, this.scene, hudRoot);
+    this.tuning = new TuningPanel(this);
 
     window.addEventListener('resize', () => this.engine.resize());
   }
@@ -85,6 +87,7 @@ export class Game {
     this.updateJob(dt);
     this.cleaning.update(dt); // dry surfaces and send any changes to the GPU
     if (this.input.wasPressed(config.audio.muteKey)) this.audio.toggleMute();
+    if (this.input.wasPressed(config.debug.tuningKey)) this.tuning.toggle();
     this.audio.update(dt, this.washer);
     this.hud.update({
       prompt: this.washer.prompt,
