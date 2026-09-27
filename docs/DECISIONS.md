@@ -120,6 +120,10 @@ threshold, so it reads 100% exactly at completion. Holding `F` highlights anythi
 counted as dirty, for players who want to find what they missed. The timer starts at the
 first spray so walking around first doesn't count. `R` only restarts after completion, so a
 stray keypress can't wipe your progress.
+**Progress is weighted by starting dirt (v0.2):** a spot counts for as much dirt as it started
+with, once it's fully clean. Counting spots equally let players reach 98% without touching
+the oil stains (only ~1% of the area); weighted, the stains are ~3% of progress and heavy
+grime makes the bar jump.
 
 ## 15. Tuning panel ships with the game (behind `T`)
 
