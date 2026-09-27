@@ -107,6 +107,7 @@ export const config = {
     finishFadeTime: 1.2, // seconds for leftover specks to fade out when the job completes
     highlightKey: 'KeyF', // hold to highlight the dirt that's left
     highlightColor: '#ff3df2', // bright magenta: stands out against concrete and grime
-    resetKey: 'KeyR', // after completion: start over with fresh dirt
+    resetKey: 'KeyR', // after completion: redo the job (or, after the last one, start over)
+    nextKey: 'KeyN', // after completion: move on to the next job
   },
 };

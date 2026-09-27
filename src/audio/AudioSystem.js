@@ -167,9 +167,10 @@ export class AudioSystem {
     return volume;
   }
 
-  /** A short mechanical "clunk" for picking up the gun. */
+  /** A short mechanical "clunk" for picking up the gun (or a gate unlatching). */
   playClunk() {
-    const context = /** @type {AudioContext} */ (this.context);
+    if (!this.context || !this.master) return; // audio hasn't started yet (no click so far)
+    const context = this.context;
     const now = context.currentTime;
     const thump = context.createOscillator();
     thump.frequency.setValueAtTime(150, now);

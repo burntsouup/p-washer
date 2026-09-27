@@ -14,7 +14,7 @@ import { Hud } from '../ui/Hud.js';
 import { TuningPanel } from '../ui/TuningPanel.js';
 import { Celebration } from './Celebration.js';
 import { Input } from './Input.js';
-import { Job } from './job.js';
+import { JobList } from './jobList.js';
 import { toDeltaSeconds } from './time.js';
 
 /**
@@ -54,8 +54,7 @@ export class Game {
       this.level.washerSpot,
     );
     this.audio = new AudioSystem();
-    this.jobId = 'driveway'; // Milestone 17 adds the backyard job after this one
-    this.job = new Job(config.job.completeAt);
+    this.jobs = new JobList(this.level.jobs, config.job.completeAt);
     this.celebration = new Celebration(this.scene);
     this.highlight = 0; // 0..1, eases in and out while the highlight key is held
     this.time = 0;
@@ -90,13 +89,16 @@ export class Game {
     if (this.input.wasPressed(config.audio.muteKey)) this.audio.toggleMute();
     if (this.input.wasPressed(config.debug.tuningKey)) this.tuning.toggle();
     this.audio.update(dt, this.washer);
+    const job = this.jobs.currentJob;
     this.hud.update({
       prompt: this.washer.prompt,
       hasWasher: this.washer.isEquipped,
-      jobStatus: this.job.status,
-      progress: this.job.displayProgress(this.cleaning.progressFor(this.jobId)),
-      elapsed: this.job.elapsed,
       fanVertical: this.washer.fanVertical,
+      job: this.jobs.current,
+      jobStatus: job.status,
+      progress: job.displayProgress(this.cleaning.progressFor(this.jobs.current.id)),
+      elapsed: job.elapsed,
+      nextJob: this.jobs.upcoming,
     });
     this.debugOverlay.update(dt);
   }
@@ -108,9 +110,10 @@ export class Game {
    */
   updateJob(dt) {
     this.time += dt;
-    const jobId = this.jobId;
-    const progress = this.cleaning.progressFor(jobId);
-    const event = this.job.update(dt, progress, this.washer.isSpraying);
+    for (const unlockable of Object.values(this.level.unlockables)) unlockable.update(dt);
+    const jobId = this.jobs.current.id;
+    const job = this.jobs.currentJob;
+    const event = job.update(dt, this.cleaning.progressFor(jobId), this.washer.isSpraying);
     if (event === 'completed') {
       this.cleaning.finishRemaining(jobId); // leftover specks fade away
       for (const surface of this.cleaning.surfacesFor(jobId)) this.celebration.play(surface.mesh);
@@ -123,9 +126,28 @@ export class Game {
     const pulse = this.highlight * (0.75 + 0.25 * Math.sin(this.time * 6));
     this.cleaning.setHighlight(pulse, jobId);
 
-    if (this.job.isComplete && this.input.wasPressed(config.job.resetKey)) {
-      this.cleaning.reset(jobId);
-      this.job.reset();
+    if (!job.isComplete) return;
+    if (this.input.wasPressed(config.job.nextKey)) {
+      const started = this.jobs.next();
+      if (started?.unlocks) {
+        this.level.unlockables[started.unlocks]?.open();
+        this.audio.playClunk();
+      }
+    } else if (this.input.wasPressed(config.job.resetKey)) {
+      if (this.jobs.allComplete) this.startOver();
+      else {
+        this.cleaning.reset(jobId);
+        this.jobs.redoCurrent();
+      }
     }
+  }
+
+  /** Back to the very beginning: every job dirty again, gates shut, player at the start. */
+  startOver() {
+    for (const { id } of this.jobs.definitions) this.cleaning.reset(id);
+    this.jobs.resetAll();
+    for (const unlockable of Object.values(this.level.unlockables)) unlockable.closeNow();
+    this.player.teleport(this.level.spawn);
+    this.camera.yaw = this.level.spawn.yaw;
   }
 }
