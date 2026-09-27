@@ -3,7 +3,7 @@
 Planning lives here instead of GitHub Issues: one list, versioned with the code.
 Check items off in the same PR that completes them.
 
-## v0.1 — "The spray feels satisfying"
+## v0.1 — "The spray feels satisfying" ✅ (released as 0.1.0)
 
 Goal: one backyard, one dirty driveway, one pressure washer. After a few minutes of play,
 washing the driveway should feel good. See the success checklist at the bottom.
@@ -84,23 +84,23 @@ washing the driveway should feel good. See the success checklist at the bottom.
       time taken (timed from the first spray); `R` starts over (only after completion)
 - [x] Tests: job rules (waiting, timing, completing once, display %, reset), `fadeAll`
 
-### 10. Tuning panel + playtest pass ✅ (your playtest still to come)
+### 10. Tuning panel + playtest pass ✅
 
 - [x] Tuning panel (`T`): live sliders for movement, camera, spray, cleaning, water effects,
       and sound; "Copy changes" puts just the edited values on the clipboard for config.js
 - [x] Pacing simulation of a full job (see decision #12) → faster cleaning and a wider spray
 - [x] Automated playtest findings recorded below
-- [ ] **Human playtest:** play a full job (~5 min) against the checklist below
+- [x] **Human playtest:** a full job against the checklist below
 
-### v0.1 success checklist
+### v0.1 success checklist ✅ (confirmed in playtest)
 
-- [ ] Movement feels responsive
-- [ ] Camera feels natural
-- [ ] Aiming the washer is intuitive
-- [ ] The water looks convincing enough
-- [ ] Dirt removal is immediately understandable
-- [ ] The clean/dirty transformation is visually obvious
-- [ ] Spraying has satisfying audio and visual feedback
+- [x] Movement feels responsive
+- [x] Camera feels natural
+- [x] Aiming the washer is intuitive
+- [x] The water looks convincing enough
+- [x] Dirt removal is immediately understandable
+- [x] The clean/dirty transformation is visually obvious
+- [x] Spraying has satisfying audio and visual feedback
 
 ### Playtest findings (Milestones 2–10)
 

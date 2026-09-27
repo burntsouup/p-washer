@@ -6,7 +6,8 @@ A small, satisfying 3D pressure-washing game. Walk up to something dirty, blast 
 enjoy the before/after. Built with [Babylon.js](https://www.babylonjs.com/) and plain
 JavaScript.
 
-**Status:** early prototype. See [docs/ROADMAP.md](docs/ROADMAP.md) for what's done and next.
+**Status:** v0.1 playable prototype: one backyard, one dirty driveway, one pressure washer.
+See [docs/ROADMAP.md](docs/ROADMAP.md) for what's done and next.
 
 ## Controls (current)
 
