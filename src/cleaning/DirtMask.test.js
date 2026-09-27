@@ -137,6 +137,27 @@ describe('scrubStroke (brush dragged between two points)', () => {
   });
 });
 
+describe('fadeAll (finishing flourish)', () => {
+  it('removes the same amount from every texel and never goes below zero', () => {
+    const mask = new DirtMask(3, 1);
+    mask.fill((x) => [0.1, 0.5, 1][x]);
+    const removed = mask.fadeAll(0.3);
+    expect(mask.get(0, 0)).toBe(0);
+    expect(mask.get(1, 0)).toBeCloseTo(0.2);
+    expect(mask.get(2, 0)).toBeCloseTo(0.7);
+    expect(removed).toBeCloseTo(0.1 + 0.3 + 0.3);
+  });
+
+  it('brings progress to 1 once everything has faded', () => {
+    const mask = uniformMask(10, 10, 0.8);
+    mask.fadeAll(0.5);
+    expect(mask.progress).toBe(0);
+    mask.fadeAll(0.5);
+    expect(mask.progress).toBe(1);
+    expect(mask.fadeAll(0.5)).toBe(0);
+  });
+});
+
 describe('progress', () => {
   it('rises as texels become clean and reaches 1 when everything is clean', () => {
     const mask = uniformMask(20, 20, 0.5);

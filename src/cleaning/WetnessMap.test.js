@@ -54,4 +54,15 @@ describe('WetnessMap', () => {
     expect(map.takeChanges()).toBe(true);
     expect(map.takeChanges()).toBe(false);
   });
+
+  it('can dry completely at once', () => {
+    const map = new WetnessMap(20, 20);
+    map.soak(10, 10, 5);
+    map.takeChanges();
+    map.dryCompletely();
+    expect(Math.max(...map.wetness)).toBe(0);
+    expect(map.takeChanges()).toBe(true);
+    map.dry(0.016, 8);
+    expect(map.takeChanges()).toBe(false); // nothing left to dry
+  });
 });
