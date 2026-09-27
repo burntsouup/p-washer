@@ -185,3 +185,15 @@ starts blank, so a surface's material is only copied if another mesh shares it. 
 misnamed texture parameter silently produced `NaN` sizes and no boards; the texture helper
 now throws on bad layout numbers. Both were found by inspecting the data (material
 readiness, then the canvas pixels), after two plausible shadow theories turned out wrong.
+
+## 19. Jobs are data, played in order
+
+**Why:** A second job should be a few lines in the level, not new code. `createBackyard()`
+returns a list of job definitions (title, hint, done text, and what it `unlocks`), and each
+cleanable surface names its job. `JobList` (pure, tested) plays them in order: you move on with
+`N` only after finishing, `R` redoes the current job, and after the last one `R` starts over
+from the beginning. The backyard job unlocks the side gate, which physically blocks the
+backyard until then, making the unlock something you can see and walk through.
+**Testing gotcha:** when stepping the game by hand in a test (the embedded browser throttles
+hidden tabs to ~1 fps), render every step. Babylon caches world positions per rendered frame,
+so skipping renders makes collisions read stale positions and walls look leaky.

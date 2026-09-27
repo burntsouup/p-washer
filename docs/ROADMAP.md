@@ -198,11 +198,14 @@ logic tested, feel checked by playing.
 - [x] A higher sun (~60°) so the house's shadow covers only the strip by the house
 - [x] Tests: paver layout (joints, running-bond offset), patio pattern
 
-### 17. Second job: the backyard
+### 17. Second job: the backyard ✅
 
-- [ ] Jobs become data: "Driveway", then "Backyard" (fence + patio) unlocks after it
-- [ ] HUD shows the current job; the completion card offers the next one
-- [ ] Tests: job order, unlocking, per-job progress
+- [x] Jobs are data in the level: "Driveway", then "Backyard" (fence + patio), each with its
+      own title, hint, and timer (`JobList`)
+- [x] A side gate blocks the backyard until the backyard job starts, then swings open
+- [x] HUD shows the current job and hint; the completion card offers the next job (`N`) or a
+      redo (`R`); after the last job, `R` starts everything over (gate shut, back at the start)
+- [x] Tests: job order, moving on only when complete, separate timers, redo and reset
 
 ### 18. Tuning + playtest pass
 
