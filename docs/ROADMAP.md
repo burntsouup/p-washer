@@ -76,11 +76,13 @@ washing the driveway should feel good. See the success checklist at the bottom.
       crackle, pickup clunk; `M` mutes
 - [x] Tests: wetness grid (soak, strokes, drying), audio mix rules
 
-### 9. Job progress and completion
+### 9. Job progress and completion ✅
 
-- [ ] Progress bar; completes at ~98% and auto-clears leftover specks
-- [ ] "Show remaining dirt" key
-- [ ] Completion moment (sound, sparkle, "Job complete", time taken); `R` to reset
+- [x] Objective + progress bar; completes at 98% and the leftover specks fade away (~1 s)
+- [x] Hold `F` to highlight the dirt that's left (bright magenta, pulsing)
+- [x] Completion moment: chime, sparkles rising off the driveway, "Job complete!" with the
+      time taken (timed from the first spray); `R` starts over (only after completion)
+- [x] Tests: job rules (waiting, timing, completing once, display %, reset), `fadeAll`
 
 ### 10. Tuning panel + playtest pass
 
