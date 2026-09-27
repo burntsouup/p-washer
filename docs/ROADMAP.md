@@ -145,12 +145,17 @@ logic tested, feel checked by playing.
 - Result (simulation): oil is 1.1% of the area but 3.3% of progress, so ~¾ of it must be
   cleaned before 98% (none before). Perfect play: ~3.2 min (was ~2.4); one pass: ~79%.
 
-### 12. Tough dirt: moss
+### 12. Tough dirt: moss ✅
 
-- [ ] A per-texel dirt _type_; moss only comes off above a minimum spray strength (so you have
+- [x] A per-texel dirt _type_; moss only comes off above a minimum spray strength (so you have
       to get close) and resists a little even then
-- [ ] Moss draws green; texture grows to 4 channels (dirt, wetness, type, spare)
-- [ ] Tests: weak spray leaves moss, strong spray removes it, other dirt unaffected
+- [x] Moss draws green; texture grows to 4 channels (dirt, wetness, moss, spare)
+- [x] On the driveway: clumps growing out of the middle joint and along the shady lawn edges
+      (~5% of the area)
+- [x] Feedback: "Moss is tough: get closer" when the spray can't lift it; green splatter when
+      it does
+- [x] Tests: weak spray leaves moss, strong spray removes it, soft edge too weak, other dirt
+      unaffected, where moss grows
 
 ### 13. Fan-shaped spray you can rotate
 
