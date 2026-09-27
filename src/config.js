@@ -13,7 +13,8 @@ export const config = {
     fog: { start: 45, end: 120 },
     // Direction the sunlight travels. Keep x/z small-ish so faces get distinct brightness.
     // Sun + fill should add up to roughly 1 on sunlit ground, or colors wash out to white.
-    sun: { direction: [-0.4, -1, 0.9], intensity: 0.85, color: '#fff3dc' },
+    // A fairly high sun (~60°) keeps the house's shadow from covering the backyard patio.
+    sun: { direction: [-0.35, -1.5, 0.75], intensity: 0.75, color: '#fff3dc' },
     // Soft light from the sky above and bounced light from the ground below.
     fill: { intensity: 0.5, skyColor: '#dbe8f5', groundColor: '#7d8a62' },
   },

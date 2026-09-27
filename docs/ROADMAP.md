@@ -188,11 +188,15 @@ logic tested, feel checked by playing.
       job, so the fence doesn't count toward the driveway (it becomes the backyard job in M17)
 - [x] Tests: trickles, fence pattern (weathering, mud, gaps, moss), per-job bookkeeping
 
-### 16. The patio: pavers and grout
+### 16. The patio: pavers and grout ✅
 
-- [ ] Paver pattern with grout lines; grime and moss collect in the joints and need close,
-      precise spraying
-- [ ] Dirt drawn over a textured clean surface (not just a flat color)
+- [x] Running-bond pavers with 3 cm joints (6 × 4 m, ~1.6 cm texels); `paverAt` is shared by
+      the paver texture and the dirt, so joints line up exactly
+- [x] Grime packed into every joint, moss in the joints mostly in the shade by the house (it
+      needs close, precise spraying), leaf stains and a greasy barbecue spot on the pavers
+- [x] Dirt drawn over a textured clean surface (stone-colored pavers drawn in code)
+- [x] A higher sun (~60°) so the house's shadow covers only the strip by the house
+- [x] Tests: paver layout (joints, running-bond offset), patio pattern
 
 ### 17. Second job: the backyard
 
