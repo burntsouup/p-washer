@@ -157,11 +157,15 @@ logic tested, feel checked by playing.
 - [x] Tests: weak spray leaves moss, strong spray removes it, soft edge too weak, other dirt
       unaffected, where moss grows
 
-### 13. Fan-shaped spray you can rotate
+### 13. Fan-shaped spray you can rotate ✅
 
-- [ ] Elliptical brush that matches the flat fan, oriented on the surface; `Q` turns the fan
-      between horizontal and vertical (the beam turns too)
-- [ ] Tests: elliptical stamp shape, rotated strokes stay gap-free
+- [x] Elliptical brush that matches the flat fan, laid onto each surface using its texture
+      directions; low angles stretch the footprint and spread the water thinner
+- [x] `Q` turns the fan between upright and flat; the beam and a bar through the crosshair
+      turn too
+- [x] Retuned: `cleanRate` 3 → 4.5 so angled spraying cleans about as fast as v0.1
+- [x] Tests: ellipse walker, elliptical stamps and gap-free strokes, fan axes, footprint
+      projection (head-on, turned, 45°, glancing), surface axes from UVs
 
 ### 14. Performance headroom for more surfaces
 

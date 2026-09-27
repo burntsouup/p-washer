@@ -66,3 +66,12 @@ describe('WetnessMap', () => {
     expect(map.takeChanges()).toBe(false); // nothing left to dry
   });
 });
+
+describe('WetnessMap with an elliptical spray', () => {
+  it('soaks the same wide, short footprint as the dirt brush', () => {
+    const map = new WetnessMap(60, 60);
+    map.soak(30.5, 30.5, { radiusX: 10, radiusY: 3, angle: 0 });
+    expect(map.get(35, 30)).toBe(1);
+    expect(map.get(30, 34)).toBe(0);
+  });
+});

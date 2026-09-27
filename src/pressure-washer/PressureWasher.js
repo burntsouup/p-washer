@@ -1,7 +1,7 @@
 import { Color3, Ray, Vector3 } from '@babylonjs/core';
 import { config } from '../config.js';
 import { SprayEffects } from './SprayEffects.js';
-import { aimDirection, groundDistance, sprayAtDistance } from './sprayMath.js';
+import { aimDirection, fanAxes, groundDistance, sprayAtDistance } from './sprayMath.js';
 import { createWand, createWasherUnit, WAND_TIP_OFFSET } from './washerModels.js';
 
 /** How far the crosshair looks for something to aim at, in meters. */
@@ -62,6 +62,9 @@ export class PressureWasher {
     this.mossShare = 0;
     /** Seconds the spray has been hitting moss without lifting it. */
     this.mossResistTime = 0;
+    /** Whether the flat fan of water is turned upright (Q toggles). */
+    this.fanVertical = config.washer.startVertical;
+    this.cameraRight = new Vector3();
     this.time = 0;
 
     // Reused every frame to avoid creating garbage.
@@ -85,6 +88,7 @@ export class PressureWasher {
       return;
     }
 
+    if (this.input.wasPressed(config.washer.fanKey)) this.fanVertical = !this.fanVertical;
     const wantsToSpray = this.input.isPointerLocked && this.input.isMouseDown(0);
     this.findAimPoint();
     this.positionWand(wantsToSpray);
@@ -164,9 +168,17 @@ export class PressureWasher {
     const landed = Boolean(hit?.hit);
     const distance = landed && hit ? hit.distance : settings.maxRange;
     const { radius, strength } = sprayAtDistance(distance, settings);
+    this.camera.babylonCamera.getDirectionToRef(Vector3.Right(), this.cameraRight);
+    const { wide, thin } = fanAxes(this.direction, this.cameraRight, this.fanVertical);
 
     const result = landed
-      ? this.cleaning.spray(hit, dt, { radius, strength })
+      ? this.cleaning.spray(hit, dt, {
+          sprayDirection: this.direction,
+          wide,
+          thin,
+          radius,
+          strength,
+        })
       : { removed: 0, toughRemoved: 0, resisted: 0 };
     if (!landed) this.cleaning.stopSpraying();
     this.dirtRate = dt > 0 ? result.removed / dt : 0;
@@ -181,6 +193,7 @@ export class PressureWasher {
     this.effects.show({
       nozzle: this.nozzle,
       direction: this.direction,
+      wide,
       distance,
       radius,
       strength,

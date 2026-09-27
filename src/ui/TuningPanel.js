@@ -42,6 +42,8 @@ export class TuningPanel {
     spray.add(config.washer, 'spreadPerMeter', 0, 0.3, 0.005).name('Spread per meter');
     spray.add(config.washer, 'fullStrengthRange', 0.2, 5, 0.1).name('Full power up to (m)');
     spray.add(config.washer, 'maxRange', 2, 12, 0.1).name('Max range (m)');
+    spray.add(config.washer, 'fanFlatness', 0.15, 1, 0.05).name('Fan flatness (1 = round)');
+    spray.add(config.washer, 'maxStretch', 1, 5, 0.1).name('Max stretch at angles');
 
     const cleaning = gui.addFolder('Cleaning');
     cleaning.add(config.cleaning, 'cleanRate', 0.5, 10, 0.1).name('Cleaning speed');
@@ -61,7 +63,6 @@ export class TuningPanel {
     effects.add(config.effects, 'splashRate', 0, 1500, 10).name('Splash');
     effects.add(config.effects, 'mistRate', 0, 200, 5).name('Mist');
     effects.add(config.effects, 'splatterPerDirt', 0, 5, 0.1).name('Dirt splatter');
-    effects.add(config.effects, 'fanFlatness', 0.1, 1, 0.05).name('Fan flatness');
     effects.add(config.effects, 'streamSpeed', 0, 10, 0.1).name('Stream speed');
     effects.close();
 

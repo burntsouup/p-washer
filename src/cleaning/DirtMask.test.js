@@ -308,3 +308,29 @@ describe('tough dirt (moss)', () => {
     expect([...a.dirt]).toEqual([...b.dirt]);
   });
 });
+
+describe('elliptical brush (fan spray)', () => {
+  const fan = { radiusX: 10, radiusY: 3, angle: 0, hardness: 1 };
+
+  it('cleans a wide, short patch', () => {
+    const mask = uniformMask(60, 60, 1);
+    mask.scrub(30, 30, 1, fan);
+    expect(mask.get(38, 30)).toBe(0); // 8 across: cleaned
+    expect(mask.get(30, 34)).toBe(1); // 4 down: untouched
+  });
+
+  it('leaves no gaps when swept across its thin side', () => {
+    const mask = uniformMask(40, 200, 1);
+    mask.scrubStroke({ x: 20, y: 10 }, { x: 20, y: 190 }, 1, fan);
+    for (let y = 12; y <= 188; y++) expect(mask.get(20, y)).toBeLessThan(1);
+  });
+
+  it('sweeps a much wider band when the fan is turned across the direction of travel', () => {
+    const along = uniformMask(80, 200, 1);
+    const across = uniformMask(80, 200, 1);
+    along.scrubStroke({ x: 40, y: 20 }, { x: 40, y: 180 }, 1, { ...fan, angle: Math.PI / 2 });
+    across.scrubStroke({ x: 40, y: 20 }, { x: 40, y: 180 }, 1, fan);
+    const cleanedWidth = (mask) => [...Array(80).keys()].filter((x) => mask.get(x, 100) < 1).length;
+    expect(cleanedWidth(across)).toBeGreaterThan(cleanedWidth(along) * 2.5);
+  });
+});

@@ -4,6 +4,7 @@ import {
   Mesh,
   MeshBuilder,
   ParticleSystem,
+  Quaternion,
   StandardMaterial,
   Vector3,
   VertexBuffer,
@@ -76,14 +77,20 @@ export class SprayEffects {
       system.start();
     }
 
-    this.lookTarget = new Vector3(); // reused every frame
+    // Reused every frame.
+    this.lookTarget = new Vector3();
     this.reflected = new Vector3();
+    this.beamForward = new Vector3();
+    this.beamSide = new Vector3();
+    this.beamUp = new Vector3();
+    this.beam.rotationQuaternion = new Quaternion();
   }
 
   /**
    * @param {{
    *   nozzle: Vector3,
    *   direction: Vector3,
+   *   wide: { x: number, y: number, z: number },
    *   distance: number,
    *   radius: number,
    *   strength: number,
@@ -93,17 +100,30 @@ export class SprayEffects {
    * }} spray hitNormal is null when the water didn't hit anything; mossShare is how much of
    *   the dirt coming off is moss (0..1).
    */
-  show({ nozzle, direction, distance, radius, strength, hitNormal, dirtRate, mossShare }) {
+  show({ nozzle, direction, wide, distance, radius, strength, hitNormal, dirtRate, mossShare }) {
     const settings = config.effects;
 
-    // Beam: a flat fan, wide sideways and thin vertically, wobbling slightly.
+    // Beam: a flat fan along the fan's wide axis (the same shape that cleans), wobbling slightly.
     const wobble = distance * 0.012;
     this.lookTarget.copyFrom(direction).scaleInPlace(distance).addInPlace(nozzle);
     this.lookTarget.x += (Math.random() - 0.5) * wobble;
     this.lookTarget.y += (Math.random() - 0.5) * wobble;
     this.impactPoint.copyFrom(this.lookTarget);
-    const width = radius * 2 * (0.92 + Math.random() * 0.16);
-    placeCone(this.beam, nozzle, this.lookTarget, width, width * settings.fanFlatness, distance);
+    orientFan(
+      this.beam,
+      nozzle,
+      this.lookTarget,
+      wide,
+      this.beamForward,
+      this.beamSide,
+      this.beamUp,
+    );
+    const { fanFlatness } = config.washer;
+    const flicker = 0.92 + Math.random() * 0.16;
+    const wideDiameter = ((radius * 2) / Math.sqrt(fanFlatness)) * flicker;
+    const thinDiameter = radius * 2 * Math.sqrt(fanFlatness) * flicker;
+    this.beam.scaling.set(wideDiameter, thinDiameter, distance);
+    this.beam.isVisible = true;
     const coreLength = Math.min(distance, 1.2);
     placeCone(this.core, nozzle, this.lookTarget, 0.03, 0.03, coreLength);
 
@@ -184,6 +204,33 @@ function createFadingCone(scene, name, { nearWidth, nearAlpha, farAlpha }) {
   cone.isPickable = false;
   cone.isVisible = false;
   return cone;
+}
+
+/**
+ * Points the beam from `from` toward `toward`, turned so its local x (its wide side) lies
+ * along the fan's wide axis.
+ *
+ * @param {Mesh} beam
+ * @param {Vector3} from
+ * @param {Vector3} toward
+ * @param {{ x: number, y: number, z: number }} wide
+ * @param {Vector3} forward Scratch vectors, reused to avoid garbage.
+ * @param {Vector3} side
+ * @param {Vector3} up
+ */
+function orientFan(beam, from, toward, wide, forward, side, up) {
+  toward.subtractToRef(from, forward).normalize();
+  // Keep the wide axis at right angles to the (slightly wobbled) beam direction.
+  side.set(wide.x, wide.y, wide.z);
+  side.subtractInPlace(forward.scale(Vector3.Dot(side, forward))).normalize();
+  Vector3.CrossToRef(forward, side, up);
+  beam.position.copyFrom(from);
+  Quaternion.RotationQuaternionFromAxisToRef(
+    side,
+    up,
+    forward,
+    /** @type {Quaternion} */ (beam.rotationQuaternion),
+  );
 }
 
 /**

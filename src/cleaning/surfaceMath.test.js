@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { gridSize, texelCenterInMeters, uvToTexel } from './surfaceMath.js';
+import { gridSize, texelCenterInMeters, uvAxesFromTriangle, uvToTexel } from './surfaceMath.js';
 
 describe('gridSize', () => {
   it('gives the driveway 256 × 512 texels at ~2 cm per texel', () => {
@@ -41,5 +41,41 @@ describe('texelCenterInMeters', () => {
     const texel = uvToTexel(meters.x / 5, meters.y / 10, grid);
     expect(texel.x).toBeCloseTo(99.5);
     expect(texel.y).toBeCloseTo(300.5);
+  });
+});
+
+describe('uvAxesFromTriangle', () => {
+  it('finds u along +x and v along +z for a ground patch (like the driveway)', () => {
+    const { u, v } = uvAxesFromTriangle(
+      [
+        [0, 0, 0],
+        [5, 0, 0],
+        [0, 0, 10],
+      ],
+      [
+        [0, 0],
+        [1, 0],
+        [0, 1],
+      ],
+    );
+    expect(u[0]).toBeCloseTo(1);
+    expect(v[2]).toBeCloseTo(1);
+  });
+
+  it('finds u sideways and v upward for an upright panel (like a fence)', () => {
+    const { u, v } = uvAxesFromTriangle(
+      [
+        [0, 0, 3],
+        [0, 1.6, 3],
+        [-24, 0, 3],
+      ],
+      [
+        [1, 0],
+        [1, 1],
+        [0, 0],
+      ],
+    );
+    expect(u[0]).toBeCloseTo(1); // u grows toward +x
+    expect(v[1]).toBeCloseTo(1); // v grows upward
   });
 });
