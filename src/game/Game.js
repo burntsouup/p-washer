@@ -95,6 +95,7 @@ export class Game {
       jobStatus: this.job.status,
       progress: this.job.displayProgress(this.cleaning.progress),
       elapsed: this.job.elapsed,
+      fanVertical: this.washer.fanVertical,
     });
     this.debugOverlay.update(dt);
   }

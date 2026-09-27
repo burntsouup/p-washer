@@ -1,8 +1,8 @@
-import { Constants, RawTexture, Texture } from '@babylonjs/core';
+import { Constants, RawTexture, Texture, Vector3, VertexBuffer } from '@babylonjs/core';
 import { config } from '../config.js';
 import { DIRT_TYPE, DirtMask } from './DirtMask.js';
 import { DirtMaterialPlugin } from './DirtMaterialPlugin.js';
-import { gridSize, texelCenterInMeters, uvToTexel } from './surfaceMath.js';
+import { gridSize, texelCenterInMeters, uvAxesFromTriangle, uvToTexel } from './surfaceMath.js';
 import { WetnessMap } from './WetnessMap.js';
 
 /**
@@ -26,6 +26,7 @@ export class CleanableSurface {
     this.pattern = dirt;
     this.grid = gridSize(width, length, config.cleaning.texelsPerMeter);
     this.texelsPerMeter = this.grid.width / width; // actual, after rounding to whole texels
+    this.axes = worldAxesOf(mesh); // which way the texture runs, to lay the spray on it
 
     this.mask = new DirtMask(this.grid.width, this.grid.height);
     // Grime comes off with any spray; moss follows config (by reference, so it's live-tunable).
@@ -109,3 +110,29 @@ export class CleanableSurface {
     this.texture.update(pixels);
   }
 }
+
+/**
+ * The world directions of the surface's texture u and v, and its normal. Assumes the mesh is
+ * flat (every cleanable surface is), so one triangle tells us everything.
+ *
+ * @param {import('@babylonjs/core').Mesh} mesh
+ * @returns {{ uAxis: Vec3, vAxis: Vec3, normal: Vec3 }}
+ */
+function worldAxesOf(mesh) {
+  const world = mesh.computeWorldMatrix(true);
+  const positions = mesh.getVerticesData(VertexBuffer.PositionKind) ?? [];
+  const uvs = mesh.getVerticesData(VertexBuffer.UVKind) ?? [];
+  const indices = mesh.getIndices() ?? [0, 1, 2];
+  const corners = indices.slice(0, 3).map((i) => {
+    const p = Vector3.TransformCoordinates(Vector3.FromArray(positions, i * 3), world);
+    return [p.x, p.y, p.z];
+  });
+  const cornerUvs = indices.slice(0, 3).map((i) => [uvs[i * 2], uvs[i * 2 + 1]]);
+  const { u, v } = uvAxesFromTriangle(corners, cornerUvs);
+  const uAxis = Vector3.FromArray(u);
+  const vAxis = Vector3.FromArray(v);
+  const normal = Vector3.Cross(uAxis, vAxis).normalize(); // which side doesn't matter here
+  return { uAxis, vAxis, normal };
+}
+
+/** @typedef {{ x: number, y: number, z: number }} Vec3 */

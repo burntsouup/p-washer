@@ -55,7 +55,7 @@ export const config = {
   cleaning: {
     texelsPerMeter: 51.2, // dirt detail: ~2 cm per texel (the 5 m wide driveway gets 256)
     brushHardness: 0.6, // 0..1: how much of the spray is full strength before its soft edge
-    cleanRate: 3, // dirt removed per second at full strength (1 = extreme dirt)
+    cleanRate: 4.5, // dirt removed per second at full strength, head-on (1 = extreme dirt)
     // Dirt colors from light to heavy. Clean concrete is the surface's own color.
     dirtColors: { light: '#9e957f', grime: '#6b604f', oil: '#25211d' },
     // Moss is tough: the spray must hit it harder than minStrength (0..1) to lift it at all,
@@ -72,6 +72,12 @@ export const config = {
     fullStrengthRange: 1.2, // full power up to here, fading to nothing at maxRange
     nozzleRadius: 0.08, // spray spot radius right at the nozzle (meters)
     spreadPerMeter: 0.09, // how much wider the spot gets per meter: ~29 cm radius at 2.3 m
+    // The water comes out as a flat fan: this is its thickness ÷ width (1 = round). The fan's
+    // area matches a round spot of the radius above, just squashed.
+    fanFlatness: 0.45,
+    fanKey: 'KeyQ', // turns the fan between upright and flat
+    startVertical: true, // upright suits side-to-side sweeps along the ground
+    maxStretch: 2.5, // at glancing angles the footprint stretches, but never more than this
   },
   effects: {
     splashRate: 450, // water droplets per second at full strength
@@ -79,7 +85,6 @@ export const config = {
     splatterPerDirt: 1.2, // dirt droplets per unit of dirt removed per second
     maxSplatterRate: 500,
     streamSpeed: 3, // how fast the streaks in the water beam rush outward
-    fanFlatness: 0.45, // beam height ÷ width: a flat fan like a real nozzle tip
   },
   audio: {
     master: 0.7,

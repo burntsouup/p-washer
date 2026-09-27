@@ -1,4 +1,15 @@
 import { config } from '../config.js';
+import { sprayFootprint } from '../pressure-washer/sprayMath.js';
+
+/**
+ * The water as it leaves the nozzle: which way it goes, how its flat fan is turned, how big
+ * the spot would be head-on (meters), and how hard it hits (0..1).
+ *
+ * @typedef {{
+ *   sprayDirection: Vec3, wide: Vec3, thin: Vec3, radius: number, strength: number,
+ * }} SprayShape
+ * @typedef {{ x: number, y: number, z: number }} Vec3
+ */
 
 /**
  * @typedef {{ removed: number, toughRemoved: number, resisted: number }} SprayResult
@@ -31,10 +42,10 @@ export class CleaningSystem {
   /**
    * @param {import('@babylonjs/core').PickingInfo | null} hit Where the spray landed.
    * @param {number} dt Seconds since the previous frame.
-   * @param {{ radius: number, strength: number }} spray Spot radius in meters; strength 0..1.
+   * @param {SprayShape} spray
    * @returns {SprayResult} What happened this frame (all zero if it missed every surface).
    */
-  spray(hit, dt, { radius, strength }) {
+  spray(hit, dt, spray) {
     const surface = hit?.hit && hit.pickedMesh ? this.surfaces.get(hit.pickedMesh) : undefined;
     const uv = surface ? hit?.getTextureCoordinates() : null;
     if (!surface || !uv) {
@@ -45,13 +56,33 @@ export class CleaningSystem {
     const settings = config.cleaning;
     const point = surface.uvToTexel(uv.x, uv.y);
     const from = this.lastHit?.surface === surface ? this.lastHit.point : point;
-    const brush = { radius: surface.metersToTexels(radius), hardness: settings.brushHardness };
+
+    // Lay the flat fan of water onto this surface as an ellipse (in texels).
+    const footprint = sprayFootprint({
+      ...spray,
+      ...surface.axes,
+      flatness: config.washer.fanFlatness,
+      maxStretch: config.washer.maxStretch,
+    });
+    const brush = {
+      radiusX: surface.metersToTexels(footprint.radiusX),
+      radiusY: surface.metersToTexels(footprint.radiusY),
+      angle: footprint.angle,
+      hardness: settings.brushHardness,
+    };
+    // Spread thinner when it lands at an angle: same water, more area.
+    const amount = settings.cleanRate * dt * footprint.density;
     const { mask } = surface;
     mask.toughRemoved = 0;
     mask.resistedTexels = 0;
-    const removed = mask.scrubStroke(from, point, settings.cleanRate * dt, brush, strength);
+    const removed = mask.scrubStroke(from, point, amount, brush, spray.strength);
     // Water spreads a little beyond where it cleans.
-    surface.wetness.soakStroke(from, point, brush.radius * settings.wetSpread);
+    const spread = settings.wetSpread;
+    surface.wetness.soakStroke(from, point, {
+      radiusX: brush.radiusX * spread,
+      radiusY: brush.radiusY * spread,
+      angle: brush.angle,
+    });
     this.lastHit = { surface, point };
     return { removed, toughRemoved: mask.toughRemoved, resisted: mask.resistedTexels };
   }

@@ -19,6 +19,7 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for what's done and next.
 | Shift         | Run                                            |
 | E             | Pick up the pressure washer (when close)       |
 | Hold click    | Spray                                          |
+| Q             | Turn the fan of water (upright / flat)         |
 | Hold F        | Highlight the dirt that's left                 |
 | R             | Start over (after the job is done)             |
 | M             | Mute / unmute                                  |

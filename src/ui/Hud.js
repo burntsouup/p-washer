@@ -8,6 +8,7 @@ import './hud.css';
  *   jobStatus: 'waiting' | 'active' | 'complete',
  *   progress: number,
  *   elapsed: number,
+ *   fanVertical: boolean,
  * }} HudState progress is 0..1 for display; elapsed is seconds on the job.
  */
 
@@ -26,6 +27,9 @@ export class Hud {
     this.input = input;
 
     this.crosshair = element('div', 'crosshair');
+    // A thin bar through the crosshair shows which way the fan of water is turned.
+    this.fanIndicator = element('div', 'fan-indicator');
+    this.crosshair.append(this.fanIndicator);
     this.prompt = element('div', 'interaction-prompt');
 
     this.objective = element('div', 'objective');
@@ -53,6 +57,7 @@ export class Hud {
         <dt>Shift</dt><dd>Run</dd>
         <dt>E</dt><dd>Pick up the pressure washer</dd>
         <dt>Hold click</dt><dd>Spray</dd>
+        <dt>Q</dt><dd>Turn the fan of water (upright / flat)</dd>
         <dt>Hold F</dt><dd>Highlight the dirt that's left</dd>
         <dt>R</dt><dd>Start over (after the job is done)</dd>
         <dt>M</dt><dd>Mute / unmute</dd>
@@ -74,6 +79,11 @@ export class Hud {
       this.crosshair.hidden = !locked;
       this.playPrompt.hidden = locked;
       this.objective.hidden = !locked;
+    });
+
+    this.set('fan', state.hasWasher ? (state.fanVertical ? 'upright' : 'flat') : 'none', (fan) => {
+      this.fanIndicator.hidden = fan === 'none';
+      this.fanIndicator.classList.toggle('is-upright', fan === 'upright');
     });
 
     const promptText = locked ? state.prompt : null;
