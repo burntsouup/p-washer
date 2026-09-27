@@ -75,3 +75,33 @@ describe('WetnessMap with an elliptical spray', () => {
     expect(map.get(30, 34)).toBe(0);
   });
 });
+
+describe('WetnessMap: only works where it is wet', () => {
+  it('tracks the wet area as it is soaked', () => {
+    const map = new WetnessMap(100, 100);
+    expect(map.wetRect).toBeNull();
+    map.soak(20, 20, 3);
+    map.soak(70, 60, 3);
+    expect(map.wetRect.minX).toBeLessThanOrEqual(17);
+    expect(map.wetRect.maxX).toBeGreaterThanOrEqual(73);
+  });
+
+  it('reports only the wet area as changed while drying', () => {
+    const map = new WetnessMap(100, 100);
+    map.soak(50, 50, 3);
+    map.takeChangedRect();
+    map.dry(0.1, 8);
+    const rect = map.takeChangedRect();
+    expect(rect.maxX - rect.minX).toBeLessThan(10);
+  });
+
+  it('forgets the wet area once everything is dry', () => {
+    const map = new WetnessMap(100, 100);
+    map.soak(50, 50, 3);
+    map.dry(9, 8);
+    expect(map.wetRect).toBeNull();
+    map.takeChangedRect();
+    map.dry(0.1, 8);
+    expect(map.takeChangedRect()).toBeNull();
+  });
+});

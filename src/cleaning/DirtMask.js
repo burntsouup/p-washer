@@ -1,5 +1,6 @@
 // @ts-check
 import { ellipseReach, forEachTexelInEllipse, toEllipse } from './brushShape.js';
+import { fullRect, unionRect } from './rect.js';
 
 /**
  * How dirty each spot of a surface is: a grid of numbers from 0 (clean) to 1 (extremely dirty).
@@ -70,7 +71,8 @@ export class DirtMask {
     this.dirtyWeight = 0;
     /** Total starting dirt of the texels cleaned so far. */
     this.cleanedWeight = 0;
-    this.changed = false;
+    /** @type {import('./rect.js').Rect | null} The part changed since last taken. */
+    this.changedRect = null;
   }
 
   /**
@@ -124,7 +126,7 @@ export class DirtMask {
         }
       }
     }
-    this.changed = true;
+    this.changedRect = fullRect(this.width, this.height);
   }
 
   /**
@@ -151,25 +153,33 @@ export class DirtMask {
   scrub(centerX, centerY, amount, brush, strength = 1) {
     const { hardness } = brush;
     let removed = 0;
-    forEachTexelInEllipse(this.width, this.height, centerX, centerY, toEllipse(brush), (i, t) => {
-      const before = this.dirt[i];
-      if (before === 0) return;
-      // How hard the water hits this texel: weaker far away and at the spot's soft edge.
-      const force = strength * brushFalloff(t, hardness);
-      const rule = this.typeRules[this.type[i]];
-      if (force <= rule.minStrength) {
-        this.resistedTexels++; // too weak to lift this kind of dirt
-        return;
-      }
-      const effect = ((force - rule.minStrength) / (1 - rule.minStrength)) * rule.rate;
-      const after = Math.max(0, before - amount * effect);
-      this.dirt[i] = after;
-      removed += before - after;
-      if (rule.minStrength > 0) this.toughRemoved += before - after;
-      if (before > CLEAN_THRESHOLD && after <= CLEAN_THRESHOLD) this.markCleaned(i);
-    });
+    const ellipse = toEllipse(brush);
+    const bounds = forEachTexelInEllipse(
+      this.width,
+      this.height,
+      centerX,
+      centerY,
+      ellipse,
+      (i, t) => {
+        const before = this.dirt[i];
+        if (before === 0) return;
+        // How hard the water hits this texel: weaker far away and at the spot's soft edge.
+        const force = strength * brushFalloff(t, hardness);
+        const rule = this.typeRules[this.type[i]];
+        if (force <= rule.minStrength) {
+          this.resistedTexels++; // too weak to lift this kind of dirt
+          return;
+        }
+        const effect = ((force - rule.minStrength) / (1 - rule.minStrength)) * rule.rate;
+        const after = Math.max(0, before - amount * effect);
+        this.dirt[i] = after;
+        removed += before - after;
+        if (rule.minStrength > 0) this.toughRemoved += before - after;
+        if (before > CLEAN_THRESHOLD && after <= CLEAN_THRESHOLD) this.markCleaned(i);
+      },
+    );
 
-    if (removed > 0) this.changed = true;
+    if (removed > 0) this.changedRect = unionRect(this.changedRect, bounds);
     return removed;
   }
 
@@ -226,18 +236,25 @@ export class DirtMask {
       removed += before - after;
       if (before > CLEAN_THRESHOLD && after <= CLEAN_THRESHOLD) this.markCleaned(i);
     }
-    if (removed > 0) this.changed = true;
+    if (removed > 0) this.changedRect = fullRect(this.width, this.height);
     return removed;
   }
 
   /**
-   * Whether the dirt changed since the last call. The renderer uses this to re-upload the
-   * texture only when needed.
+   * The part of the grid that changed since the last call (or null), so the renderer
+   * re-uploads only that part.
+   *
+   * @returns {import('./rect.js').Rect | null}
    */
+  takeChangedRect() {
+    const rect = this.changedRect;
+    this.changedRect = null;
+    return rect;
+  }
+
+  /** Whether anything changed since the last call (and forget the changes). */
   takeChanges() {
-    const changed = this.changed;
-    this.changed = false;
-    return changed;
+    return this.takeChangedRect() !== null;
   }
 }
 

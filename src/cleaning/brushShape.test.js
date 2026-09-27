@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ellipseReach, forEachTexelInEllipse, toEllipse } from './brushShape.js';
+import { ellipseBounds, ellipseReach, forEachTexelInEllipse, toEllipse } from './brushShape.js';
 
 /** Which texels an ellipse covers, as a Set of "x,y" strings. */
 function covered(width, height, cx, cy, ellipse) {
@@ -73,5 +73,26 @@ describe('ellipseReach', () => {
 
   it('follows the rotation', () => {
     expect(ellipseReach({ ...ellipse, angle: Math.PI / 2 }, 0, 1)).toBeCloseTo(10);
+  });
+});
+
+describe('ellipseBounds', () => {
+  it('is the box around the ellipse, clipped to the grid', () => {
+    expect(ellipseBounds(100, 100, 50, 50, { radiusX: 10, radiusY: 3, angle: 0 })).toEqual({
+      minX: 40,
+      minY: 47,
+      maxX: 60,
+      maxY: 53,
+    });
+    expect(ellipseBounds(20, 20, 2, 2, { radiusX: 5, radiusY: 5, angle: 0 })).toEqual({
+      minX: 0,
+      minY: 0,
+      maxX: 7,
+      maxY: 7,
+    });
+  });
+
+  it('is null for an ellipse entirely off the grid', () => {
+    expect(ellipseBounds(20, 20, -50, 5, { radiusX: 3, radiusY: 3, angle: 0 })).toBeNull();
   });
 });

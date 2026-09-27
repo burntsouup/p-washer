@@ -334,3 +334,36 @@ describe('elliptical brush (fan spray)', () => {
     expect(cleanedWidth(across)).toBeGreaterThan(cleanedWidth(along) * 2.5);
   });
 });
+
+describe('changed area (so only that part is re-uploaded)', () => {
+  it('is the whole grid after filling', () => {
+    const mask = uniformMask(30, 20, 0.5);
+    expect(mask.takeChangedRect()).toEqual({ minX: 0, minY: 0, maxX: 29, maxY: 19 });
+    expect(mask.takeChangedRect()).toBeNull();
+  });
+
+  it('covers just where the brush removed dirt', () => {
+    const mask = uniformMask(100, 100, 0.5);
+    mask.takeChangedRect();
+    mask.scrub(50, 50, 0.2, { radius: 5, hardness: 1 });
+    const rect = mask.takeChangedRect();
+    expect(rect.minX).toBeGreaterThanOrEqual(44);
+    expect(rect.maxX).toBeLessThanOrEqual(56);
+  });
+
+  it('grows to cover every stamp of a stroke', () => {
+    const mask = uniformMask(100, 100, 0.5);
+    mask.takeChangedRect();
+    mask.scrubStroke({ x: 10, y: 50 }, { x: 90, y: 50 }, 0.2, { radius: 4, hardness: 1 });
+    const rect = mask.takeChangedRect();
+    expect(rect.minX).toBeLessThanOrEqual(10);
+    expect(rect.maxX).toBeGreaterThanOrEqual(90);
+  });
+
+  it('stays empty when nothing was removed', () => {
+    const mask = uniformMask(20, 20, 0);
+    mask.takeChangedRect();
+    mask.scrub(10, 10, 1, brush);
+    expect(mask.takeChangedRect()).toBeNull();
+  });
+});
