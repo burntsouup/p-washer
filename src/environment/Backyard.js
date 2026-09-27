@@ -1,7 +1,13 @@
 import { Color3, MeshBuilder, StandardMaterial } from '@babylonjs/core';
-import { drivewayDirt, FENCE_BOARD, fenceDirt } from '../cleaning/dirtPatterns.js';
+import {
+  drivewayDirt,
+  FENCE_BOARD,
+  fenceDirt,
+  PATIO_PAVER,
+  patioDirt,
+} from '../cleaning/dirtPatterns.js';
 import { Greybox } from './greybox.js';
-import { createBoardTexture } from './surfaceTextures.js';
+import { createBoardTexture, createPaverTexture } from './surfaceTextures.js';
 
 // Units are meters. +x = right (toward the garage), +z = away from the street, y = up.
 // The street runs along x at the front; the house faces the street.
@@ -12,7 +18,7 @@ const COLORS = {
   streetLine: '#d9b64a',
   sidewalk: '#b9b6ad',
   concrete: '#c4c0b6',
-  patio: '#b8a58c',
+  patio: '#cdbb9f', // warm stone, tinting the paver texture
   walls: '#e3dccd',
   roof: '#5a5552',
   garageDoor: '#f1efe9',
@@ -37,6 +43,9 @@ const HOUSE = { left: -8, right: 8, front: 1.5, back: 11.5, wallHeight: 3.2 };
 const FENCE = { gateZ: 7, back: 24, halfWidth: 12, height: 1.6 };
 /** Dirt colors on wood: silvery weathering, mud, and dark water stains. */
 const WOOD_DIRT = { light: '#8f8c83', grime: '#5a5249', oil: '#3a342e' };
+const PATIO = { width: 6, length: 4, centerX: -2 };
+/** Dirt colors on stone pavers: a grey-brown film, packed grime, and barbecue grease. */
+const STONE_DIRT = { light: '#9c9280', grime: '#5f5446', oil: '#2a2420' };
 const DRIVEWAY = { width: 5, length: 10, centerX: 4.5 };
 const SIDEWALK = { front: -10, back: -8.5 };
 
@@ -58,6 +67,7 @@ export function createBackyard(scene, shadows) {
   buildHouse(kit);
   buildFence(kit);
   const backFence = buildBackFenceFace(scene);
+  const patio = buildPatio(scene);
   buildPlants(kit);
   buildProps(kit);
   buildBounds(kit);
@@ -86,6 +96,16 @@ export function createBackyard(scene, shadows) {
       dirt: fenceDirt({ height: FENCE.height, seed: 4 }),
       texelsPerMeter: 40, // 2.5 cm: plenty for boards, and keeps the long fence affordable
       palette: WOOD_DIRT,
+    },
+    {
+      // The patio behind the house: u across (x), v from the house (z) out into the yard.
+      mesh: patio,
+      job: 'backyard',
+      width: PATIO.width,
+      length: PATIO.length,
+      dirt: patioDirt({ width: PATIO.width, length: PATIO.length, seed: 6 }),
+      texelsPerMeter: 64, // ~1.6 cm, so the 3 cm joints are about two texels wide
+      palette: STONE_DIRT,
     },
   ];
 
@@ -163,11 +183,6 @@ function buildHouse(kit) {
     at: [-2, LAYER.paving, (HOUSE.front + SIDEWALK.back) / 2],
     color: COLORS.concrete,
   });
-  kit.flat('patio', {
-    size: [6, 4],
-    at: [-2, LAYER.paving, HOUSE.back + 2],
-    color: COLORS.patio,
-  });
 }
 
 /**
@@ -243,6 +258,31 @@ function buildBackFenceFace(scene) {
   material.specularColor = Color3.Black();
   face.material = material;
   return face;
+}
+
+/**
+ * The paved patio behind the house: its own flat mesh and material, with pavers drawn in code.
+ *
+ * @param {import('@babylonjs/core').Scene} scene
+ */
+function buildPatio(scene) {
+  const { width, length, centerX } = PATIO;
+  const patio = MeshBuilder.CreateGround('patio', { width, height: length }, scene);
+  patio.position.set(centerX, LAYER.paving, HOUSE.back + length / 2);
+  patio.receiveShadows = true;
+
+  const columns = 4;
+  const rows = 2;
+  const pavers = createPaverTexture(scene, { ...PATIO_PAVER, columns, rows, seed: 12 });
+  const module = PATIO_PAVER.size + PATIO_PAVER.joint;
+  pavers.uScale = width / (columns * module);
+  pavers.vScale = length / (rows * module);
+  const material = new StandardMaterial('patioMat', scene);
+  material.diffuseTexture = pavers;
+  material.diffuseColor = Color3.FromHexString(COLORS.patio);
+  material.specularColor = Color3.Black();
+  patio.material = material;
+  return patio;
 }
 
 /** @param {Greybox} kit */

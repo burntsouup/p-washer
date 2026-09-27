@@ -62,3 +62,54 @@ export function createBoardTexture(scene, { boardWidth, gap, boardsPerTile, seed
   texture.update();
   return texture;
 }
+
+/**
+ * Square pavers in a running bond with sandy joints, each paver a slightly different shade.
+ * One tile covers `columns` × `rows` pavers (rows must be even, for the offset rows to line
+ * up); repeat it with uScale/vScale. Laid out exactly like `paverAt` in dirtPatterns.js.
+ *
+ * @param {import('@babylonjs/core').Scene} scene
+ * @param {{ size: number, joint: number, columns: number, rows: number, seed: number }} layout
+ *   Paver size and joint width in meters.
+ */
+export function createPaverTexture(scene, { size, joint, columns, rows, seed }) {
+  if (!(size > 0 && joint >= 0 && columns > 0 && rows > 0 && rows % 2 === 0)) {
+    throw new Error(`createPaverTexture: bad layout ${JSON.stringify({ size, joint, rows })}`);
+  }
+  const module = size + joint;
+  const width = 512;
+  const pixelsPerMeter = width / (columns * module);
+  const height = Math.round(rows * module * pixelsPerMeter);
+  const texture = new DynamicTexture('paverTexture', { width, height }, scene, true);
+  const context = texture.getContext();
+  const random = createRandom(seed);
+  /** Canvas y grows downward, but texture v grows upward, so flip. @param {number} meters */
+  const canvasY = (meters) => height - meters * pixelsPerMeter;
+
+  context.fillStyle = 'rgb(125, 122, 115)'; // sandy joints
+  context.fillRect(0, 0, width, height);
+  for (let row = 0; row < rows; row++) {
+    const offset = row % 2 === 0 ? 0 : module / 2;
+    for (let column = -1; column <= columns; column++) {
+      const left = (column * module - offset + joint) * pixelsPerMeter;
+      const top = canvasY((row + 1) * module);
+      const shade = 190 + Math.floor(random() * 45);
+      context.fillStyle = `rgb(${shade}, ${shade}, ${shade})`;
+      context.fillRect(left, top, size * pixelsPerMeter, size * pixelsPerMeter);
+      // A light speckle, like stone aggregate.
+      for (let s = 0; s < 40; s++) {
+        context.fillStyle = `rgba(0, 0, 0, ${0.05 + random() * 0.08})`;
+        context.fillRect(
+          left + random() * size * pixelsPerMeter,
+          top + random() * size * pixelsPerMeter,
+          1.5,
+          1.5,
+        );
+      }
+    }
+  }
+  texture.wrapU = Texture.WRAP_ADDRESSMODE;
+  texture.wrapV = Texture.WRAP_ADDRESSMODE;
+  texture.update();
+  return texture;
+}
