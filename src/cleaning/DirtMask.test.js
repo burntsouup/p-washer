@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CLEAN_THRESHOLD, DirtMask } from './DirtMask.js';
+import { CLEAN_THRESHOLD, DIRT_TYPE, DirtMask } from './DirtMask.js';
 
 const brush = { radius: 5, hardness: 0.6 };
 
@@ -233,5 +233,78 @@ describe('dirt-weighted progress', () => {
       }
     }
     expect(mask.progress).toBeCloseTo(cleaned / total, 6);
+  });
+});
+
+describe('tough dirt (moss)', () => {
+  const rules = [
+    { minStrength: 0, rate: 1 }, // grime
+    { minStrength: 0.7, rate: 0.6 }, // moss
+  ];
+  /** A mask that's grime on the left half and moss on the right half, all at 0.8. */
+  function grimeAndMoss() {
+    const mask = new DirtMask(40, 20);
+    mask.typeRules = rules;
+    mask.fill(
+      () => 0.8,
+      (x) => (x < 20 ? DIRT_TYPE.grime : DIRT_TYPE.moss),
+    );
+    return mask;
+  }
+  const hardBrush = { radius: 4, hardness: 1 };
+
+  it('fills a dirt type per texel', () => {
+    const mask = grimeAndMoss();
+    expect(mask.getType(5, 5)).toBe(DIRT_TYPE.grime);
+    expect(mask.getType(30, 5)).toBe(DIRT_TYPE.moss);
+  });
+
+  it('defaults to grime everywhere when no types are given', () => {
+    const mask = uniformMask(4, 4, 0.5);
+    expect(mask.getType(2, 2)).toBe(DIRT_TYPE.grime);
+  });
+
+  it('a weak spray lifts grime but leaves moss alone', () => {
+    const mask = grimeAndMoss();
+    mask.scrub(10, 10, 0.5, hardBrush, 0.5); // grime side
+    mask.scrub(30, 10, 0.5, hardBrush, 0.5); // moss side
+    expect(mask.get(10, 10)).toBeCloseTo(0.8 - 0.5 * 0.5);
+    expect(mask.get(30, 10)).toBeCloseTo(0.8, 6); // untouched
+  });
+
+  it('a strong spray lifts moss, but more slowly than grime', () => {
+    const mask = grimeAndMoss();
+    mask.scrub(10, 10, 0.5, hardBrush, 1);
+    mask.scrub(30, 10, 0.5, hardBrush, 1);
+    const grimeRemoved = 0.8 - mask.get(10, 10);
+    const mossRemoved = 0.8 - mask.get(30, 10);
+    expect(mossRemoved).toBeGreaterThan(0);
+    expect(mossRemoved).toBeCloseTo(grimeRemoved * 0.6);
+  });
+
+  it('only the strong middle of the spray lifts moss, not its soft edge', () => {
+    const mask = grimeAndMoss();
+    mask.scrub(30.5, 10.5, 0.5, { radius: 6, hardness: 0.3 }, 1);
+    expect(mask.get(30, 10)).toBeLessThan(0.8); // center: full strength
+    expect(mask.get(35, 10)).toBeCloseTo(0.8, 6); // near the edge: too weak for moss
+  });
+
+  it('counts moss the spray was too weak to lift, and moss it did lift', () => {
+    const mask = grimeAndMoss();
+    mask.scrub(30, 10, 0.5, hardBrush, 0.5);
+    expect(mask.resistedTexels).toBeGreaterThan(0);
+    expect(mask.toughRemoved).toBe(0);
+    mask.resistedTexels = 0;
+    mask.scrub(30, 10, 0.5, hardBrush, 1);
+    expect(mask.resistedTexels).toBe(0);
+    expect(mask.toughRemoved).toBeGreaterThan(0);
+  });
+
+  it('keeps grime behaving exactly as before (strength defaults to 1)', () => {
+    const a = uniformMask(30, 30, 1);
+    const b = uniformMask(30, 30, 1);
+    a.scrub(15, 15, 0.4, brush);
+    b.scrub(15, 15, 0.4, brush, 1);
+    expect([...a.dirt]).toEqual([...b.dirt]);
   });
 });
