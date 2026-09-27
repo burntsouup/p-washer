@@ -56,7 +56,7 @@ export class TuningPanel {
     cleaning
       .add(config.job, 'completeAt', 0.9, 1, 0.005)
       .name('Job done at')
-      .onChange((/** @type {number} */ value) => (game.job.completeAt = value));
+      .onChange((/** @type {number} */ value) => (game.jobs.completeAt = value));
     cleaning.close();
 
     const effects = gui.addFolder('Water effects');

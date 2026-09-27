@@ -115,6 +115,17 @@ export class Player {
     }
   }
 
+  /**
+   * Puts the player back at a spot, standing still.
+   *
+   * @param {{ position: number[], yaw: number }} spot
+   */
+  teleport(spot) {
+    this.root.position.set(spot.position[0], spot.position[1], spot.position[2]);
+    this.root.rotation.y = spot.yaw;
+    this.velocity = { x: 0, z: 0 };
+  }
+
   /** @param {number} opacity 0 (invisible) to 1 (solid). The shadow stays either way. */
   setOpacity(opacity) {
     for (const mesh of this.meshes) mesh.visibility = opacity;

@@ -21,7 +21,8 @@ See [docs/ROADMAP.md](docs/ROADMAP.md) for what's done and next.
 | Hold click    | Spray                                          |
 | Q             | Turn the fan of water (upright / flat)         |
 | Hold F        | Highlight the dirt that's left                 |
-| R             | Start over (after the job is done)             |
+| N             | Next job (after finishing one)                 |
+| R             | Redo the job (after finishing it)              |
 | M             | Mute / unmute                                  |
 | T             | Tuning panel (live sliders; "Copy changes")    |
 | Esc           | Release the mouse                              |

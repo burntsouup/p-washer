@@ -5,11 +5,14 @@ import './hud.css';
  * @typedef {{
  *   prompt: string | null,
  *   hasWasher: boolean,
+ *   fanVertical: boolean,
+ *   job: import('../game/jobList.js').JobDefinition,
  *   jobStatus: 'waiting' | 'active' | 'complete',
  *   progress: number,
  *   elapsed: number,
- *   fanVertical: boolean,
- * }} HudState progress is 0..1 for display; elapsed is seconds on the job.
+ *   nextJob: import('../game/jobList.js').JobDefinition | null,
+ * }} HudState progress is 0..1 for display; elapsed is seconds on the job; nextJob is the one
+ *   after this (null if this is the last).
  */
 
 /**
@@ -34,18 +37,25 @@ export class Hud {
 
     this.objective = element('div', 'objective');
     this.objectiveTitle = element('div', 'objective-title');
+    this.objectiveHint = element('div', 'objective-hint');
     const bar = element('div', 'progress-bar');
     this.progressFill = element('div', 'progress-fill');
     bar.append(this.progressFill);
     this.progressLabel = element('div', 'progress-label');
-    this.objective.append(this.objectiveTitle, bar, this.progressLabel);
+    this.objective.append(this.objectiveTitle, this.objectiveHint, bar, this.progressLabel);
 
     this.completeCard = element('div', 'job-complete');
     this.completeCard.innerHTML = `
-      <h2>Job complete!</h2>
-      <p>Driveway cleaned in <strong class="job-time"></strong></p>
-      <p class="job-complete-hint">Press R to start over</p>`;
-    this.jobTime = /** @type {HTMLElement} */ (this.completeCard.querySelector('.job-time'));
+      <h2 class="job-complete-title"></h2>
+      <p><span class="job-summary"></span> <strong class="job-time"></strong></p>
+      <p class="job-complete-hint"></p>`;
+    /** @param {string} selector */
+    const find = (selector) =>
+      /** @type {HTMLElement} */ (this.completeCard.querySelector(selector));
+    this.completeTitle = find('.job-complete-title');
+    this.jobSummary = find('.job-summary');
+    this.jobTime = find('.job-time');
+    this.completeHint = find('.job-complete-hint');
 
     this.playPrompt = element('div', 'play-prompt');
     this.playPrompt.innerHTML = `
@@ -59,7 +69,8 @@ export class Hud {
         <dt>Hold click</dt><dd>Spray</dd>
         <dt>Q</dt><dd>Turn the fan of water (upright / flat)</dd>
         <dt>Hold F</dt><dd>Highlight the dirt that's left</dd>
-        <dt>R</dt><dd>Start over (after the job is done)</dd>
+        <dt>N</dt><dd>Next job (after finishing one)</dd>
+        <dt>R</dt><dd>Redo the job (after finishing it)</dd>
         <dt>M</dt><dd>Mute / unmute</dd>
         <dt>T</dt><dd>Tuning panel</dd>
         <dt>Esc</dt><dd>Release the mouse</dd>
@@ -92,9 +103,17 @@ export class Hud {
       this.prompt.hidden = !promptText;
     });
 
-    const title = state.hasWasher ? 'Clean the driveway' : 'Pick up the pressure washer';
-    this.set('title', complete ? 'Driveway clean!' : title, (text) => {
-      this.objectiveTitle.textContent = /** @type {string} */ (text);
+    const { job } = state;
+    let title = job.title;
+    if (!state.hasWasher) title = 'Pick up the pressure washer';
+    else if (complete) title = job.doneTitle;
+    this.set('title', title, () => {
+      this.objectiveTitle.textContent = title;
+    });
+    const hint = state.hasWasher && !complete ? (job.hint ?? '') : '';
+    this.set('hint', hint, () => {
+      this.objectiveHint.textContent = hint;
+      this.objectiveHint.hidden = !hint;
     });
 
     // Whole percent only reaches 100 when the job actually completes.
@@ -105,9 +124,16 @@ export class Hud {
       this.objective.classList.toggle('is-complete', complete);
     });
 
-    this.set('complete', locked && complete, (show) => {
-      this.completeCard.hidden = !show;
-      if (show) this.jobTime.textContent = formatDuration(state.elapsed);
+    this.set('complete', locked && complete ? job.id : null, (shownJob) => {
+      this.completeCard.hidden = !shownJob;
+      if (!shownJob) return;
+      const next = state.nextJob;
+      this.completeTitle.textContent = next ? 'Job complete!' : 'All jobs done!';
+      this.jobSummary.textContent = job.summary;
+      this.jobTime.textContent = formatDuration(state.elapsed);
+      this.completeHint.textContent = next
+        ? `Press N for the next job: ${next.name ?? next.title}. R to redo this one.`
+        : 'Press R to start over from the beginning.';
     });
   }
 

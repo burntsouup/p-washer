@@ -6,6 +6,7 @@ import {
   PATIO_PAVER,
   patioDirt,
 } from '../cleaning/dirtPatterns.js';
+import { Gate } from './Gate.js';
 import { Greybox } from './greybox.js';
 import { createBoardTexture, createPaverTexture } from './surfaceTextures.js';
 
@@ -66,6 +67,16 @@ export function createBackyard(scene, shadows) {
   const driveway = buildDriveway(kit);
   buildHouse(kit);
   buildFence(kit);
+  // The side gate into the backyard, in the gap between the house and the fence. It's shut
+  // until the backyard job starts.
+  const gate = new Gate(scene, kit, {
+    hinge: [HOUSE.right + 1.5, FENCE.gateZ],
+    length: 1.5,
+    height: FENCE.height,
+    color: COLORS.fence,
+    openAngle: Math.PI / 2, // swings into the backyard
+    openTime: 1.2,
+  });
   const backFence = buildBackFenceFace(scene);
   const patio = buildPatio(scene);
   buildPlants(kit);
@@ -109,7 +120,30 @@ export function createBackyard(scene, shadows) {
     },
   ];
 
-  return { ground, driveway, spawn, washerSpot, cleanables };
+  // The jobs, in order. Each cleanable surface above names the job it belongs to.
+  /** @type {import('../game/jobList.js').JobDefinition[]} */
+  const jobs = [
+    {
+      id: 'driveway',
+      name: 'the driveway',
+      title: 'Clean the driveway',
+      doneTitle: 'Driveway clean!',
+      summary: 'Driveway cleaned in',
+    },
+    {
+      id: 'backyard',
+      name: 'the backyard',
+      title: 'Clean the backyard: fence and patio',
+      hint: 'Through the side gate, next to the garage',
+      doneTitle: 'Backyard clean!',
+      summary: 'Backyard cleaned in',
+      unlocks: 'backyardGate',
+    },
+  ];
+  /** Things a job can open when it starts. */
+  const unlockables = { backyardGate: gate };
+
+  return { ground, driveway, spawn, washerSpot, cleanables, jobs, unlockables };
 }
 
 /** @param {Greybox} kit */
