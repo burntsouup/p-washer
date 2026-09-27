@@ -56,12 +56,12 @@ export const config = {
   cleaning: {
     texelsPerMeter: 51.2, // dirt detail: ~2 cm per texel (the 5 m wide driveway gets 256)
     brushHardness: 0.6, // 0..1: how much of the spray is full strength before its soft edge
-    cleanRate: 4.5, // dirt removed per second at full strength, head-on (1 = extreme dirt)
+    cleanRate: 5.5, // dirt removed per second at full strength, head-on (1 = extreme dirt)
     // Dirt colors from light to heavy. Clean concrete is the surface's own color.
     dirtColors: { light: '#9e957f', grime: '#6b604f', oil: '#25211d' },
     // Moss is tough: the spray must hit it harder than minStrength (0..1) to lift it at all,
-    // which in practice means getting close. After that it comes off at `rate` × normal.
-    moss: { minStrength: 0.7, rate: 0.6 },
+    // which in practice means getting within ~2.9 m. After that it comes off at `rate` × normal.
+    moss: { minStrength: 0.65, rate: 0.9 },
     mossColors: { light: '#86913f', dark: '#3d5122' },
     wetSpread: 1.3, // the wet patch is this much wider than the cleaning spot
     dripChance: 0.5, // on upright surfaces: chance per frame of a trickle running down
