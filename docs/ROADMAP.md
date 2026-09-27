@@ -130,7 +130,7 @@ driveway · physics engine, hose, puddles, fluid simulation · character art or 
 menus, settings, save/load · gamepad, touch · NPCs, story, multiplayer · TypeScript, ECS,
 WebGPU.
 
-## v0.2 — "Every surface is a new way to clean"
+## v0.2 — "Every surface is a new way to clean" ✅ (released as 0.2.0)
 
 Goal: make the core interaction itself more varied before adding progression. Tough dirt,
 a rotating fan, a vertical fence and a paved patio should each change _how_ you clean, and a
@@ -207,14 +207,14 @@ logic tested, feel checked by playing.
       redo (`R`); after the last job, `R` starts everything over (gate shut, back at the start)
 - [x] Tests: job order, moving on only when complete, separate timers, redo and reset
 
-### 18. Tuning + playtest pass ✅ (your playtest still to come)
+### 18. Tuning + playtest pass ✅
 
 - [x] Tuning panel entries for the new settings (moss, fan flatness and stretch, trickles)
 - [x] Pacing simulation of all three surfaces with the real dirt, moss, fan, and angle math
       (two sweeps, then slower close-up passes over what's left)
 - [x] Retuned from it: `cleanRate` 4.5 → 5.5, moss `{ 0.7, 0.6 }` → `{ 0.65, 0.9 }`
 - [x] Automated findings recorded below
-- [ ] **Human playtest:** both jobs against the checklist below
+- [x] **Human playtest:** both jobs against the checklist below
 
 ### v0.2 pacing (simulated, after tuning)
 
@@ -227,31 +227,31 @@ logic tested, feel checked by playing.
 The simulated close-up phase re-sweeps whole rows slowly, so its finish times (~4.5 min for
 the driveway, ~4 min for the backyard) are pessimistic; real players target what's left (`F`).
 
-### v0.2 success checklist
+### v0.2 success checklist ✅ (confirmed in playtest)
 
-- [ ] Tough dirt makes "get closer" a meaningful, satisfying choice
-- [ ] Rotating the fan feels useful, not like a gimmick
-- [ ] Cleaning the vertical fence feels as good as the driveway
-- [ ] Working the grout lines feels precise and rewarding
-- [ ] Heavy stains feel worth cleaning (and progress reflects them)
-- [ ] Moving from the first job to the second feels natural
-- [ ] Still 60 fps with every surface dirty
+- [x] Tough dirt makes "get closer" a meaningful, satisfying choice
+- [x] Rotating the fan feels useful, not like a gimmick
+- [x] Cleaning the vertical fence feels as good as the driveway
+- [x] Working the grout lines feels precise and rewarding
+- [x] Heavy stains feel worth cleaning (and progress reflects them)
+- [x] Moving from the first job to the second feels natural
+- [x] Still 60 fps with every surface dirty
 
 ### v0.2 playtest findings (Milestones 11–18)
 
 Fixed along the way: moss barely visible (1% → 5% visible clumps), fan halving per-pass
 cleaning (retuned), fence panel not drawing (a cloned canvas texture is blank), fence nearly
 black (a misnamed parameter made the boards `NaN`), invisible trickles, patio mostly in the
-house's shadow (higher sun), and a crash when a gate opened before audio started.
+house's shadow (higher sun), and a crash when a gate opened before audio started. The
+simulation flagged the moss/grout tail as the longest part of each job; the playtest found the
+pacing good.
 
 Still open, roughly in priority order:
 
-1. **Is the moss/grout tail satisfying or tedious?** The simulation says it's the longest part
-   of each job. Needs a human playtest; the "Moss" sliders tune it live.
-2. **The side fences and posts can't be cleaned.** They stay weathered by design (the contrast
+1. **The side fences and posts can't be cleaned.** They stay weathered by design (the contrast
    shows off the clean back fence), but spraying them does nothing, which may read as a bug.
-3. **Thin joints blur at a distance.** At ~2 texels wide, grout lines soften far away; `F` helps.
-4. From v0.1: placeholder audio, the gun floating beside a capsule, no hose, only cleanable
+2. **Thin joints blur at a distance.** At ~2 texels wide, grout lines soften far away; `F` helps.
+3. From v0.1: placeholder audio, the gun floating beside a capsule, no hose, only cleanable
    surfaces get wet, bundle size.
 
 Testing note: the embedded browser tab was hidden (throttled to ~1 fps) for most of v0.2, so
