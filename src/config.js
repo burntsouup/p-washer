@@ -21,6 +21,7 @@ export const config = {
     showFps: true,
     // KeyboardEvent.code that toggles the Babylon Inspector (the ` key, left of 1).
     inspectorKey: 'Backquote',
+    tuningKey: 'KeyT', // toggles the live tuning panel
   },
   camera: {
     fov: 1.0, // vertical field of view in radians (~57°)
@@ -54,7 +55,7 @@ export const config = {
   cleaning: {
     texelsPerMeter: 51.2, // dirt detail: ~2 cm per texel (the 5 m wide driveway gets 256)
     brushHardness: 0.6, // 0..1: how much of the spray is full strength before its soft edge
-    cleanRate: 2, // dirt removed per second at full strength (1 = extreme dirt)
+    cleanRate: 3, // dirt removed per second at full strength (1 = extreme dirt)
     // Dirt colors from light to heavy. Clean concrete is the surface's own color.
     dirtColors: { light: '#9e957f', grime: '#6b604f', oil: '#25211d' },
     wetSpread: 1.3, // the wet patch is this much wider than the cleaning spot
@@ -65,8 +66,8 @@ export const config = {
     pickupRange: 1.8, // how close (meters) you need to be to pick up the washer
     maxRange: 6, // the spray stops cleaning beyond this distance (meters)
     fullStrengthRange: 1.2, // full power up to here, fading to nothing at maxRange
-    nozzleRadius: 0.06, // spray spot radius right at the nozzle (meters)
-    spreadPerMeter: 0.07, // how much wider the spot gets per meter: ~22 cm radius at 2.3 m
+    nozzleRadius: 0.08, // spray spot radius right at the nozzle (meters)
+    spreadPerMeter: 0.09, // how much wider the spot gets per meter: ~29 cm radius at 2.3 m
   },
   effects: {
     splashRate: 450, // water droplets per second at full strength
