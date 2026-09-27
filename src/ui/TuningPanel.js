@@ -53,6 +53,8 @@ export class TuningPanel {
     cleaning.add(config.cleaning, 'wetDarkening', 0.3, 1, 0.01).name('Wet darkness');
     cleaning.add(config.cleaning.moss, 'minStrength', 0, 0.95, 0.05).name('Moss: min strength');
     cleaning.add(config.cleaning.moss, 'rate', 0.1, 1.5, 0.05).name('Moss: removal speed');
+    cleaning.add(config.cleaning, 'dripChance', 0, 1, 0.05).name('Trickles on walls (chance)');
+    cleaning.add(config.cleaning, 'dripWidth', 0.01, 0.15, 0.005).name('Trickle width (m)');
     cleaning
       .add(config.job, 'completeAt', 0.9, 1, 0.005)
       .name('Job done at')

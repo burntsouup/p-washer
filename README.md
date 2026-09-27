@@ -6,8 +6,9 @@ A small, satisfying 3D pressure-washing game. Walk up to something dirty, blast 
 enjoy the before/after. Built with [Babylon.js](https://www.babylonjs.com/) and plain
 JavaScript.
 
-**Status:** v0.1 playable prototype: one backyard, one dirty driveway, one pressure washer.
-See [docs/ROADMAP.md](docs/ROADMAP.md) for what's done and next.
+**Status:** v0.2 (awaiting playtest): two jobs, a driveway, then a fence and patio out back,
+with stubborn moss and a flat-fan spray you can turn. See [docs/ROADMAP.md](docs/ROADMAP.md) for
+what's done and next.
 
 ## Controls (current)
 
@@ -63,7 +64,7 @@ src/
   cleaning/            Dirt and wetness grids, patterns, the dirt shader, CleaningSystem
   pressure-washer/     The machine, the spray gun, aiming, water beam and particles
   audio/               Synthesized sounds (audioMix.js is the tested, pure part)
-  ui/                  HTML overlay: crosshair, prompts, "click to play", FPS
+  ui/                  HTML overlay: HUD, prompts, "click to play", tuning panel
 docs/
   ROADMAP.md           Milestones and checklists (our plan)
   DECISIONS.md         Why things are the way they are

@@ -207,10 +207,25 @@ logic tested, feel checked by playing.
       redo (`R`); after the last job, `R` starts everything over (gate shut, back at the start)
 - [x] Tests: job order, moving on only when complete, separate timers, redo and reset
 
-### 18. Tuning + playtest pass
+### 18. Tuning + playtest pass ✅ (your playtest still to come)
 
-- [ ] Tuning panel entries for the new settings; pacing simulation for the backyard job
-- [ ] Playtest against the checklist below; record findings
+- [x] Tuning panel entries for the new settings (moss, fan flatness and stretch, trickles)
+- [x] Pacing simulation of all three surfaces with the real dirt, moss, fan, and angle math
+      (two sweeps, then slower close-up passes over what's left)
+- [x] Retuned from it: `cleanRate` 4.5 → 5.5, moss `{ 0.7, 0.6 }` → `{ 0.65, 0.9 }`
+- [x] Automated findings recorded below
+- [ ] **Human playtest:** both jobs against the checklist below
+
+### v0.2 pacing (simulated, after tuning)
+
+| Surface  | Area  | 1st sweep | 2nd sweep | Notes                                   |
+| -------- | ----- | --------- | --------- | --------------------------------------- |
+| Driveway | 50 m² | ~60%      | ~82%      | 1st sweep takes ~30 s with the fan up   |
+| Fence    | 38 m² | ~84%      | ~94%      | Finishes quickly; moss along the bottom |
+| Patio    | 24 m² | ~66%      | ~87%      | The long tail is moss in the joints     |
+
+The simulated close-up phase re-sweeps whole rows slowly, so its finish times (~4.5 min for
+the driveway, ~4 min for the backyard) are pessimistic; real players target what's left (`F`).
 
 ### v0.2 success checklist
 
@@ -221,6 +236,26 @@ logic tested, feel checked by playing.
 - [ ] Heavy stains feel worth cleaning (and progress reflects them)
 - [ ] Moving from the first job to the second feels natural
 - [ ] Still 60 fps with every surface dirty
+
+### v0.2 playtest findings (Milestones 11–18)
+
+Fixed along the way: moss barely visible (1% → 5% visible clumps), fan halving per-pass
+cleaning (retuned), fence panel not drawing (a cloned canvas texture is blank), fence nearly
+black (a misnamed parameter made the boards `NaN`), invisible trickles, patio mostly in the
+house's shadow (higher sun), and a crash when a gate opened before audio started.
+
+Still open, roughly in priority order:
+
+1. **Is the moss/grout tail satisfying or tedious?** The simulation says it's the longest part
+   of each job. Needs a human playtest; the "Moss" sliders tune it live.
+2. **The side fences and posts can't be cleaned.** They stay weathered by design (the contrast
+   shows off the clean back fence), but spraying them does nothing, which may read as a bug.
+3. **Thin joints blur at a distance.** At ~2 texels wide, grout lines soften far away; `F` helps.
+4. From v0.1: placeholder audio, the gun floating beside a capsule, no hose, only cleanable
+   surfaces get wet, bundle size.
+
+Testing note: the embedded browser tab was hidden (throttled to ~1 fps) for most of v0.2, so
+browser checks stepped the game by hand. Play in a normal tab to judge feel.
 
 ### v0.2 risks
 
