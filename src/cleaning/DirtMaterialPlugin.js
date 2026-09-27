@@ -16,11 +16,13 @@ export class DirtMaterialPlugin extends MaterialPluginBase {
    */
   constructor(material, dirtTexture) {
     super(material, 'DirtMask', 200, { DIRTMASK: false });
-    const { dirtColors } = config.cleaning;
+    const { dirtColors, mossColors } = config.cleaning;
     this.dirtTexture = dirtTexture;
     this.colorLight = Color3.FromHexString(dirtColors.light);
     this.colorGrime = Color3.FromHexString(dirtColors.grime);
     this.colorOil = Color3.FromHexString(dirtColors.oil);
+    this.mossLight = Color3.FromHexString(mossColors.light);
+    this.mossDark = Color3.FromHexString(mossColors.dark);
     this.skyColor = Color3.FromHexString(config.render.sky.horizon);
     this.sunDirection = new Vector3(...config.render.sun.direction).normalize();
     this.highlightColor = Color3.FromHexString(config.job.highlightColor);
@@ -60,6 +62,8 @@ export class DirtMaterialPlugin extends MaterialPluginBase {
         { name: 'dirtColorLight', size: 3, type: 'vec3' },
         { name: 'dirtColorGrime', size: 3, type: 'vec3' },
         { name: 'dirtColorOil', size: 3, type: 'vec3' },
+        { name: 'mossColorLight', size: 3, type: 'vec3' },
+        { name: 'mossColorDark', size: 3, type: 'vec3' },
         { name: 'wetSkyColor', size: 3, type: 'vec3' },
         { name: 'wetSunDirection', size: 3, type: 'vec3' },
         { name: 'wetDarkening', size: 1, type: 'float' },
@@ -70,6 +74,8 @@ export class DirtMaterialPlugin extends MaterialPluginBase {
         uniform vec3 dirtColorLight;
         uniform vec3 dirtColorGrime;
         uniform vec3 dirtColorOil;
+        uniform vec3 mossColorLight;
+        uniform vec3 mossColorDark;
         uniform vec3 wetSkyColor;
         uniform vec3 wetSunDirection;
         uniform float wetDarkening;
@@ -83,6 +89,8 @@ export class DirtMaterialPlugin extends MaterialPluginBase {
     uniformBuffer.updateColor3('dirtColorLight', this.colorLight);
     uniformBuffer.updateColor3('dirtColorGrime', this.colorGrime);
     uniformBuffer.updateColor3('dirtColorOil', this.colorOil);
+    uniformBuffer.updateColor3('mossColorLight', this.mossLight);
+    uniformBuffer.updateColor3('mossColorDark', this.mossDark);
     uniformBuffer.updateColor3('wetSkyColor', this.skyColor);
     uniformBuffer.updateVector3('wetSunDirection', this.sunDirection);
     uniformBuffer.updateColor3('dirtHighlightColor', this.highlightColor);
@@ -118,12 +126,15 @@ export class DirtMaterialPlugin extends MaterialPluginBase {
       // Runs after Babylon has worked out the surface color, before lighting is applied.
       CUSTOM_FRAGMENT_UPDATE_DIFFUSE: `
         #ifdef DIRTMASK
-          vec2 dirtAndWetness = texture2D(dirtSampler, vMainUV1).rg;
+          vec3 dirtData = texture2D(dirtSampler, vMainUV1).rgb; // dirt, wetness, moss
           // Treat nearly-clean spots as fully clean, so cleaned areas look crisp and finished.
-          float dirt = dirtAndWetness.r * smoothstep(0.03, 0.1, dirtAndWetness.r);
-          float surfaceWetness = dirtAndWetness.g;
+          float dirt = dirtData.r * smoothstep(0.03, 0.1, dirtData.r);
+          float surfaceWetness = dirtData.g;
           vec3 dirtColor = mix(dirtColorLight, dirtColorGrime, smoothstep(0.3, 0.65, dirt));
           dirtColor = mix(dirtColor, dirtColorOil, smoothstep(0.7, 1.0, dirt));
+          // Moss: green instead of brown, darker where it's thicker.
+          vec3 mossColor = mix(mossColorLight, mossColorDark, smoothstep(0.4, 0.9, dirt));
+          dirtColor = mix(dirtColor, mossColor, dirtData.b);
           // Even a light film hides most of the clean surface; heavier dirt only gets darker.
           diffuseColor = mix(diffuseColor, dirtColor, smoothstep(0.0, 0.3, dirt));
           // Wet surfaces absorb more light, so they look darker.
@@ -142,7 +153,7 @@ export class DirtMaterialPlugin extends MaterialPluginBase {
           color.rgb += surfaceWetness * (wetSkyColor * skySheen + vec3(sunGlint));
           // "Show remaining dirt": paint every spot that still counts as dirty (above the
           // 0.05 clean threshold), including specks too faint to see normally.
-          float remaining = step(0.05, dirtAndWetness.r);
+          float remaining = step(0.05, dirtData.r);
           color.rgb = mix(color.rgb, dirtHighlightColor, dirtHighlight * remaining);
         #endif
       `,

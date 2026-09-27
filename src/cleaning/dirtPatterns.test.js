@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { DIRT_TYPE } from './DirtMask.js';
 import { DIRT_LEVELS, drivewayDirt } from './dirtPatterns.js';
 import { createRandom, createValueNoise, fractalNoise, smoothstep } from './noise.js';
 
@@ -56,12 +57,14 @@ describe('drivewayDirt', () => {
   const length = 10;
   const step = 0.05; // sample every 5 cm
 
-  /** Samples the pattern on a grid and returns [{ x, y, dirt }]. */
+  /** Samples the pattern on a grid and returns [{ x, y, dirt, type }]. */
   function sample(seed) {
-    const dirtAt = drivewayDirt({ width, length, seed });
+    const { dirtAt, typeAt } = drivewayDirt({ width, length, seed });
     const samples = [];
     for (let y = step / 2; y < length; y += step) {
-      for (let x = step / 2; x < width; x += step) samples.push({ x, y, dirt: dirtAt(x, y) });
+      for (let x = step / 2; x < width; x += step) {
+        samples.push({ x, y, dirt: dirtAt(x, y), type: typeAt(x, y) });
+      }
     }
     return samples;
   }
@@ -106,5 +109,25 @@ describe('drivewayDirt', () => {
     const extreme = samples.filter((s) => s.dirt > 0.95);
     expect(extreme.length).toBeGreaterThan(0);
     for (const s of extreme) expect(s.y).toBeGreaterThan(length / 2);
+  });
+
+  it('grows some moss, but only a small part of the driveway', () => {
+    const moss = samples.filter((s) => s.type === DIRT_TYPE.moss);
+    expect(moss.length).toBeGreaterThan(20);
+    expect(moss.length).toBeLessThan(samples.length * 0.1);
+  });
+
+  it('grows moss only around the middle joint or along the edges in the garage-end half', () => {
+    for (const s of samples.filter((s) => s.type === DIRT_TYPE.moss)) {
+      const nearJoint = Math.abs(s.y - length / 2) < 0.2;
+      const onShadyEdge = Math.min(s.x, width - s.x) < 0.65 && s.y > length * 0.3;
+      expect(nearJoint || onShadyEdge).toBe(true);
+    }
+  });
+
+  it('makes moss thick (it is tough and worth a lot)', () => {
+    for (const s of samples.filter((s) => s.type === DIRT_TYPE.moss)) {
+      expect(s.dirt).toBeGreaterThan(0.3);
+    }
   });
 });

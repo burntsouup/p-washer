@@ -18,6 +18,23 @@ const STAMP_SPACING = 0.35;
  * (a brush 5 texels wide touches ~120 texels), so this only matters for teleport-size jumps. */
 const MAX_STAMPS_PER_STROKE = 256;
 
+/** Kinds of dirt. Each texel has one; `typeRules` says how each reacts to the spray. */
+export const DIRT_TYPE = { grime: 0, moss: 1 };
+
+/**
+ * How a dirt type reacts to the spray. The spray's strength at a texel (0..1, lower when far
+ * away or at the soft edge of the spot) must be above `minStrength` to lift it at all, and
+ * `rate` scales how fast it comes off after that.
+ *
+ * @typedef {{ minStrength: number, rate: number }} DirtRule
+ */
+
+/** @type {DirtRule[]} Indexed by DIRT_TYPE. Grime: anything lifts it. */
+const DEFAULT_RULES = [
+  { minStrength: 0, rate: 1 },
+  { minStrength: 0.7, rate: 0.6 },
+];
+
 /** @typedef {{ radius: number, hardness: number }} Brush radius in texels; hardness 0..1. */
 /** @typedef {{ x: number, y: number }} Point */
 
@@ -32,6 +49,13 @@ export class DirtMask {
     this.dirt = new Float32Array(width * height);
     /** How dirty each texel was at the start: its "worth" toward progress. */
     this.startingDirt = new Float32Array(width * height);
+    /** The kind of dirt on each texel (a DIRT_TYPE value). */
+    this.type = new Uint8Array(width * height);
+    /** How each dirt type reacts to the spray. Replace to tune (e.g. from config). */
+    this.typeRules = DEFAULT_RULES;
+    /** Running totals for feedback; whoever reads them resets them to 0. */
+    this.toughRemoved = 0; // dirt removed from tough types (e.g. moss)
+    this.resistedTexels = 0; // tough texels the spray was too weak to lift
     /** Texels that started dirty (above CLEAN_THRESHOLD). */
     this.dirtyCount = 0;
     /** How many of those have been cleaned so far. */
@@ -63,11 +87,20 @@ export class DirtMask {
   }
 
   /**
-   * Sets the starting dirt everywhere and resets progress.
+   * @param {number} x
+   * @param {number} y
+   */
+  getType(x, y) {
+    return this.type[y * this.width + x];
+  }
+
+  /**
+   * Sets the starting dirt (and dirt type) everywhere and resets progress.
    *
    * @param {(x: number, y: number) => number} dirtAt Called with each texel's column and row.
+   * @param {(x: number, y: number) => number} [typeAt] A DIRT_TYPE per texel (default grime).
    */
-  fill(dirtAt) {
+  fill(dirtAt, typeAt = () => DIRT_TYPE.grime) {
     this.dirtyCount = 0;
     this.cleanedCount = 0;
     this.dirtyWeight = 0;
@@ -78,6 +111,7 @@ export class DirtMask {
         const i = y * this.width + x;
         this.dirt[i] = value;
         this.startingDirt[i] = value;
+        this.type[i] = typeAt(x, y);
         if (value > CLEAN_THRESHOLD) {
           this.dirtyCount++;
           this.dirtyWeight += value;
@@ -103,11 +137,12 @@ export class DirtMask {
    *
    * @param {number} centerX
    * @param {number} centerY
-   * @param {number} amount Dirt removed at the center (e.g. cleaning rate × dt).
+   * @param {number} amount Dirt removed at the center at full strength (cleaning rate × dt).
    * @param {Brush} brush
+   * @param {number} [strength] Spray strength 0..1 (weaker when far away). Default 1.
    * @returns {number} Total dirt actually removed (useful for feedback like splatter).
    */
-  scrub(centerX, centerY, amount, brush) {
+  scrub(centerX, centerY, amount, brush, strength = 1) {
     const { radius, hardness } = brush;
     const minX = Math.max(0, Math.floor(centerX - radius));
     const maxX = Math.min(this.width - 1, Math.ceil(centerX + radius));
@@ -126,10 +161,18 @@ export class DirtMask {
         const i = y * this.width + x;
         const before = this.dirt[i];
         if (before === 0) continue;
-        const strength = brushFalloff(Math.sqrt(distanceSquared) / radius, hardness);
-        const after = Math.max(0, before - amount * strength);
+        // How hard the water hits this texel: weaker far away and at the spot's soft edge.
+        const force = strength * brushFalloff(Math.sqrt(distanceSquared) / radius, hardness);
+        const rule = this.typeRules[this.type[i]];
+        if (force <= rule.minStrength) {
+          this.resistedTexels++; // too weak to lift this kind of dirt
+          continue;
+        }
+        const effect = ((force - rule.minStrength) / (1 - rule.minStrength)) * rule.rate;
+        const after = Math.max(0, before - amount * effect);
         this.dirt[i] = after;
         removed += before - after;
+        if (rule.minStrength > 0) this.toughRemoved += before - after;
         if (before > CLEAN_THRESHOLD && after <= CLEAN_THRESHOLD) this.markCleaned(i);
       }
     }
@@ -147,11 +190,12 @@ export class DirtMask {
    *
    * @param {Point} from Where the spray was last frame (already cleaned then).
    * @param {Point} to Where the spray is now.
-   * @param {number} amount Dirt removed at the center over the whole stroke.
+   * @param {number} amount Dirt removed at the center over the whole stroke, at full strength.
    * @param {Brush} brush
+   * @param {number} [strength] Spray strength 0..1. Default 1.
    * @returns {number} Total dirt actually removed.
    */
-  scrubStroke(from, to, amount, brush) {
+  scrubStroke(from, to, amount, brush, strength = 1) {
     const length = Math.hypot(to.x - from.x, to.y - from.y);
     const stamps = Math.min(
       MAX_STAMPS_PER_STROKE,
@@ -162,7 +206,7 @@ export class DirtMask {
       const t = s / stamps;
       const x = from.x + (to.x - from.x) * t;
       const y = from.y + (to.y - from.y) * t;
-      removed += this.scrub(x, y, amount / stamps, brush);
+      removed += this.scrub(x, y, amount / stamps, brush, strength);
     }
     return removed;
   }

@@ -134,3 +134,14 @@ included in production builds, hidden until `T`, so tuning works on the live sit
 "Copy changes" copies only the edited values as JSON, ready to paste into `config.js` (or
 into a Copilot chat) to make them the new defaults. Nothing is saved between reloads, so
 `config.js` stays the single source of truth.
+
+## 16. Dirt types: tough dirt needs a strong spray
+
+**Why:** "Get closer for tough dirt" needed teeth. Each texel has a dirt type, and each type has
+a rule: the spray's force at that texel (strength by distance × the spot's soft falloff) must
+exceed `minStrength` to lift it at all, and `rate` scales how fast it comes off after that.
+Grime: `{ 0, 1 }`. Moss: `{ 0.7, 0.6 }` (`config.cleaning.moss`), so it resists from more than
+~2.6 m and only the strong middle of the spot lifts it. When the spray hits moss it can't
+lift, the HUD says so, so it never feels like a bug. Types live in the texture's blue channel
+for drawing (green instead of brown).
+**Revisit when:** adding more types (e.g. paint, rust). The rule table already supports them.

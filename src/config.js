@@ -58,6 +58,10 @@ export const config = {
     cleanRate: 3, // dirt removed per second at full strength (1 = extreme dirt)
     // Dirt colors from light to heavy. Clean concrete is the surface's own color.
     dirtColors: { light: '#9e957f', grime: '#6b604f', oil: '#25211d' },
+    // Moss is tough: the spray must hit it harder than minStrength (0..1) to lift it at all,
+    // which in practice means getting close. After that it comes off at `rate` × normal.
+    moss: { minStrength: 0.7, rate: 0.6 },
+    mossColors: { light: '#86913f', dark: '#3d5122' },
     wetSpread: 1.3, // the wet patch is this much wider than the cleaning spot
     dryTime: 8, // seconds for a soaked spot to dry completely
     wetDarkening: 0.62, // wet surfaces are multiplied by this (1 = no darkening)
