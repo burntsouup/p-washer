@@ -185,3 +185,53 @@ describe('progress', () => {
     expect(mask.cleanedCount).toBe(recount);
   });
 });
+
+describe('dirt-weighted progress', () => {
+  /** Two texels: a light film (0.25) and an oil stain (1.0). */
+  function filmAndOil() {
+    const mask = new DirtMask(2, 1);
+    mask.fill((x) => (x === 0 ? 0.25 : 1));
+    return mask;
+  }
+  const hardBrush = { radius: 0.6, hardness: 1 }; // touches exactly one texel
+
+  it('counts each spot by how dirty it started: oil is worth 4× a light film', () => {
+    const cleanOil = filmAndOil();
+    cleanOil.scrub(1.5, 0.5, 1, hardBrush);
+    expect(cleanOil.progress).toBeCloseTo(1 / 1.25); // 80%
+
+    const cleanFilm = filmAndOil();
+    cleanFilm.scrub(0.5, 0.5, 1, hardBrush);
+    expect(cleanFilm.progress).toBeCloseTo(0.25 / 1.25); // 20%
+  });
+
+  it('only counts a spot once it is fully clean', () => {
+    const mask = filmAndOil();
+    mask.scrub(1.5, 0.5, 0.8, hardBrush); // oil 1.0 → 0.2: much better, but not clean
+    expect(mask.progress).toBe(0);
+  });
+
+  it('is exactly 1 when everything is clean, whatever order it was cleaned in', () => {
+    const mask = new DirtMask(30, 30);
+    mask.fill((x, y) => 0.1 + ((x * 7 + y * 13) % 10) / 11);
+    mask.scrubStroke({ x: 30, y: 30 }, { x: 0, y: 0 }, 1, { radius: 40, hardness: 1 });
+    expect(mask.progress).toBe(1);
+  });
+
+  it('matches a full recount of the starting dirt of every clean texel', () => {
+    const mask = new DirtMask(50, 50);
+    const startingDirt = (x, y) => 0.2 + ((x + y) % 5) * 0.2;
+    mask.fill(startingDirt);
+    mask.scrubStroke({ x: 5, y: 5 }, { x: 45, y: 30 }, 2, brush);
+    let cleaned = 0;
+    let total = 0;
+    for (let y = 0; y < 50; y++) {
+      for (let x = 0; x < 50; x++) {
+        const start = Math.min(1, startingDirt(x, y));
+        total += start;
+        if (mask.get(x, y) <= CLEAN_THRESHOLD) cleaned += start;
+      }
+    }
+    expect(mask.progress).toBeCloseTo(cleaned / total, 6);
+  });
+});

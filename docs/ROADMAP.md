@@ -110,9 +110,8 @@ unhandled pointer-lock errors, and a job that took ~7.5 minutes of _perfect_ pla
 
 Still open, roughly in priority order:
 
-1. **Oil stains can be skipped.** Progress counts texels, and the stains are only ~2% of
-   the area, so you can finish at 98% without touching the most satisfying dirt. Consider
-   weighting progress by the _amount_ of dirt, so heavy grime counts for more.
+1. ~~**Oil stains can be skipped.**~~ Fixed in Milestone 11: progress is now weighted by
+   starting dirt, so the stains must mostly be cleaned before the job completes.
 2. **Placeholder audio.** Synthesized layers work, but real CC0 recordings would sound much
    richer. The four layers (engine, hiss, impact, stripping) stay the same.
 3. **The fan beam is flat, but the cleaning spot is round.** Fine at normal angles; an
@@ -138,11 +137,13 @@ a rotating fan, a vertical fence and a paved patio should each change _how_ you 
 second job should tie them together. Same rules as v0.1: small milestones, each playable, pure
 logic tested, feel checked by playing.
 
-### 11. Dirt-weighted progress
+### 11. Dirt-weighted progress ✅
 
-- [ ] A spot counts for as much as the dirt it started with, so an oil stain (1.0) counts 4×
+- [x] A spot counts for as much as the dirt it started with, so an oil stain (1.0) counts 4×
       a light film (0.25). Spots still have to become fully clean to count
-- [ ] Tests: weighting, clean-threshold still required, 100% only when everything is clean
+- [x] Tests: weighting, clean-threshold still required, 100% only when everything is clean
+- Result (simulation): oil is 1.1% of the area but 3.3% of progress, so ~¾ of it must be
+  cleaned before 98% (none before). Perfect play: ~3.2 min (was ~2.4); one pass: ~79%.
 
 ### 12. Tough dirt: moss
 

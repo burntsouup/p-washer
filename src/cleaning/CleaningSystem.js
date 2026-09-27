@@ -53,15 +53,20 @@ export class CleaningSystem {
     this.lastHit = null;
   }
 
-  /** Fraction of all the dirt (across every surface) that has been cleaned, 0..1. */
+  /**
+   * Fraction of all the dirt (across every surface) that has been cleaned, 0..1. Weighted by
+   * how dirty each spot started, like DirtMask.progress.
+   */
   get progress() {
-    let dirty = 0;
-    let cleaned = 0;
+    let dirtyWeight = 0;
+    let cleanedWeight = 0;
+    let allClean = true;
     for (const { mask } of this.surfaces.values()) {
-      dirty += mask.dirtyCount;
-      cleaned += mask.cleanedCount;
+      dirtyWeight += mask.dirtyWeight;
+      cleanedWeight += mask.cleanedWeight;
+      if (mask.cleanedCount !== mask.dirtyCount) allClean = false;
     }
-    return dirty === 0 ? 1 : cleaned / dirty;
+    return allClean ? 1 : cleanedWeight / dirtyWeight;
   }
 
   /** @param {number} dt Seconds since the previous frame. */

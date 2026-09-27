@@ -30,16 +30,28 @@ export class DirtMask {
     this.width = width;
     this.height = height;
     this.dirt = new Float32Array(width * height);
+    /** How dirty each texel was at the start: its "worth" toward progress. */
+    this.startingDirt = new Float32Array(width * height);
     /** Texels that started dirty (above CLEAN_THRESHOLD). */
     this.dirtyCount = 0;
     /** How many of those have been cleaned so far. */
     this.cleanedCount = 0;
+    /** Total starting dirt of the texels that started dirty. */
+    this.dirtyWeight = 0;
+    /** Total starting dirt of the texels cleaned so far. */
+    this.cleanedWeight = 0;
     this.changed = false;
   }
 
-  /** 0 when nothing has been cleaned yet, 1 when everything that was dirty is clean. */
+  /**
+   * 0 when nothing has been cleaned yet, 1 when everything that was dirty is clean.
+   *
+   * Weighted by starting dirt: cleaning an oil stain (1.0) counts four times as much as the
+   * same area of light film (0.25). A texel only counts once it's fully clean.
+   */
   get progress() {
-    return this.dirtyCount === 0 ? 1 : this.cleanedCount / this.dirtyCount;
+    if (this.cleanedCount === this.dirtyCount) return 1; // exact, despite float rounding
+    return this.cleanedWeight / this.dirtyWeight;
   }
 
   /**
@@ -58,14 +70,32 @@ export class DirtMask {
   fill(dirtAt) {
     this.dirtyCount = 0;
     this.cleanedCount = 0;
+    this.dirtyWeight = 0;
+    this.cleanedWeight = 0;
     for (let y = 0; y < this.height; y++) {
       for (let x = 0; x < this.width; x++) {
         const value = Math.min(1, Math.max(0, dirtAt(x, y)));
-        this.dirt[y * this.width + x] = value;
-        if (value > CLEAN_THRESHOLD) this.dirtyCount++;
+        const i = y * this.width + x;
+        this.dirt[i] = value;
+        this.startingDirt[i] = value;
+        if (value > CLEAN_THRESHOLD) {
+          this.dirtyCount++;
+          this.dirtyWeight += value;
+        }
       }
     }
     this.changed = true;
+  }
+
+  /**
+   * Records that texel `i` just became clean. Dirt only ever goes down, so this happens at
+   * most once per texel.
+   *
+   * @param {number} i
+   */
+  markCleaned(i) {
+    this.cleanedCount++;
+    this.cleanedWeight += this.startingDirt[i];
   }
 
   /**
@@ -100,8 +130,7 @@ export class DirtMask {
         const after = Math.max(0, before - amount * strength);
         this.dirt[i] = after;
         removed += before - after;
-        // Dirt only ever goes down, so crossing the threshold happens once per texel.
-        if (before > CLEAN_THRESHOLD && after <= CLEAN_THRESHOLD) this.cleanedCount++;
+        if (before > CLEAN_THRESHOLD && after <= CLEAN_THRESHOLD) this.markCleaned(i);
       }
     }
 
@@ -154,7 +183,7 @@ export class DirtMask {
       const after = Math.max(0, before - amount);
       dirt[i] = after;
       removed += before - after;
-      if (before > CLEAN_THRESHOLD && after <= CLEAN_THRESHOLD) this.cleanedCount++;
+      if (before > CLEAN_THRESHOLD && after <= CLEAN_THRESHOLD) this.markCleaned(i);
     }
     if (removed > 0) this.changed = true;
     return removed;
