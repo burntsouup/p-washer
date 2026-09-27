@@ -48,13 +48,21 @@ export const config = {
     acceleration: 30, // m/s²: reaches walking speed in ~0.1 s. Lower feels heavier.
     deceleration: 40, // m/s²: how hard you brake when letting go of the keys
     turnSpeed: 14, // how quickly the body turns to face the direction of travel
+    aimTurnSpeed: 25, // while spraying, how quickly the body turns to face where you aim
+    sprayingSpeedFactor: 0.6, // walk/run speed multiplier while spraying: heavier, steadier
   },
   cleaning: {
     texelsPerMeter: 51.2, // dirt detail: ~2 cm per texel (the 5 m wide driveway gets 256)
-    sprayRadius: 0.15, // meters
     brushHardness: 0.6, // 0..1: how much of the spray is full strength before its soft edge
-    cleanRate: 2, // dirt removed per second at the center of the spray (1 = extreme dirt)
+    cleanRate: 2, // dirt removed per second at full strength (1 = extreme dirt)
     // Dirt colors from light to heavy. Clean concrete is the surface's own color.
     dirtColors: { light: '#9e957f', grime: '#6b604f', oil: '#25211d' },
+  },
+  washer: {
+    pickupRange: 1.8, // how close (meters) you need to be to pick up the washer
+    maxRange: 6, // the spray stops cleaning beyond this distance (meters)
+    fullStrengthRange: 1.2, // full power up to here, fading to nothing at maxRange
+    nozzleRadius: 0.06, // spray spot radius right at the nozzle (meters)
+    spreadPerMeter: 0.07, // how much wider the spot gets per meter: ~22 cm radius at 2.3 m
   },
 };

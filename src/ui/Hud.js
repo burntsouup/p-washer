@@ -1,8 +1,8 @@
 import './hud.css';
 
 /**
- * The HTML overlay players see: a crosshair while playing, and a "click to play" card
- * (with controls) whenever the mouse isn't captured.
+ * The HTML overlay players see: a crosshair and interaction prompts while playing, and a
+ * "click to play" card (with controls) whenever the mouse isn't captured.
  */
 export class Hud {
   /**
@@ -15,6 +15,9 @@ export class Hud {
     this.crosshair = document.createElement('div');
     this.crosshair.className = 'crosshair';
 
+    this.prompt = document.createElement('div');
+    this.prompt.className = 'interaction-prompt';
+
     this.playPrompt = document.createElement('div');
     this.playPrompt.className = 'play-prompt';
     this.playPrompt.innerHTML = `
@@ -24,20 +27,32 @@ export class Hud {
         <dt>Mouse</dt><dd>Look around</dd>
         <dt>WASD</dt><dd>Move</dd>
         <dt>Shift</dt><dd>Run</dd>
-        <dt>Hold click</dt><dd>Clean under the crosshair</dd>
+        <dt>E</dt><dd>Pick up the pressure washer</dd>
+        <dt>Hold click</dt><dd>Spray</dd>
         <dt>Esc</dt><dd>Release the mouse</dd>
       </dl>`;
 
-    root.append(this.crosshair, this.playPrompt);
+    root.append(this.crosshair, this.prompt, this.playPrompt);
     /** @type {boolean | null} */
     this.shownLocked = null;
+    /** @type {string | null | undefined} */
+    this.shownPrompt = undefined;
   }
 
-  update() {
+  /** @param {string | null} promptText Interaction hint to show while playing, if any. */
+  update(promptText) {
+    // Only touch the page when something changed.
     const locked = this.input.isPointerLocked;
-    if (locked === this.shownLocked) return; // only touch the page when something changed
-    this.shownLocked = locked;
-    this.crosshair.hidden = !locked;
-    this.playPrompt.hidden = locked;
+    if (locked !== this.shownLocked) {
+      this.shownLocked = locked;
+      this.crosshair.hidden = !locked;
+      this.playPrompt.hidden = locked;
+    }
+    const text = locked ? promptText : null;
+    if (text !== this.shownPrompt) {
+      this.shownPrompt = text;
+      this.prompt.textContent = text ?? '';
+      this.prompt.hidden = !text;
+    }
   }
 }
