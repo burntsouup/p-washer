@@ -105,3 +105,22 @@ describe('WetnessMap: only works where it is wet', () => {
     expect(map.takeChangedRect()).toBeNull();
   });
 });
+
+describe('WetnessMap trickles (water running down a wall)', () => {
+  it('runs from a point in the given direction and fades along the way', () => {
+    const map = new WetnessMap(20, 100);
+    map.trickle({ x: 10, y: 80 }, { x: 0, y: -1 }, 50, 1.5, 0.9, 0.3);
+    expect(map.get(10, 79)).toBeGreaterThan(0.7); // near the start: quite wet
+    expect(map.get(10, 55)).toBeGreaterThan(0.3); // halfway down
+    expect(map.get(10, 55)).toBeLessThan(map.get(10, 79));
+    expect(map.get(10, 90)).toBe(0); // it doesn't run uphill
+    expect(map.get(15, 60)).toBe(0); // and it's thin
+  });
+
+  it('never makes a soaked spot drier', () => {
+    const map = new WetnessMap(20, 100);
+    map.soak(10, 60, 5);
+    map.trickle({ x: 10, y: 80 }, { x: 0, y: -1 }, 40, 1.5, 0.5, 0.2);
+    expect(map.get(10, 60)).toBe(1);
+  });
+});

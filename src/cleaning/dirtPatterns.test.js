@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DIRT_TYPE } from './DirtMask.js';
-import { DIRT_LEVELS, drivewayDirt } from './dirtPatterns.js';
+import { DIRT_LEVELS, drivewayDirt, FENCE_BOARD, fenceDirt } from './dirtPatterns.js';
 import { createRandom, createValueNoise, fractalNoise, smoothstep } from './noise.js';
 
 describe('createRandom', () => {
@@ -129,5 +129,48 @@ describe('drivewayDirt', () => {
     for (const s of samples.filter((s) => s.type === DIRT_TYPE.moss)) {
       expect(s.dirt).toBeGreaterThan(0.3);
     }
+  });
+});
+
+describe('fenceDirt', () => {
+  const width = 24;
+  const height = 1.6;
+  const { dirtAt, typeAt } = fenceDirt({ height, seed: 4 });
+  const samples = [];
+  for (let y = 0.01; y < height; y += 0.04) {
+    for (let x = 0.003; x < width; x += 0.037) {
+      samples.push({ x, y, dirt: dirtAt(x, y), type: typeAt(x, y) });
+    }
+  }
+  const average = (list) => list.reduce((sum, s) => sum + s.dirt, 0) / list.length;
+
+  it('weathers the whole fence (nothing starts clean) and stays in 0..1', () => {
+    const values = samples.map((s) => s.dirt);
+    expect(Math.min(...values)).toBeGreaterThan(0.2);
+    expect(Math.max(...values)).toBeLessThanOrEqual(1);
+  });
+
+  it('is muddiest along the bottom', () => {
+    const bottom = samples.filter((s) => s.y < 0.15);
+    const middle = samples.filter((s) => s.y > 0.6 && s.y < 1);
+    expect(average(bottom)).toBeGreaterThan(average(middle) + 0.15);
+  });
+
+  it('keeps grime in the gaps between boards', () => {
+    const inGap = (s) => s.x % FENCE_BOARD.width < FENCE_BOARD.gap;
+    const gaps = samples.filter((s) => inGap(s) && s.y > 0.6);
+    const boards = samples.filter((s) => !inGap(s) && s.y > 0.6);
+    expect(average(gaps)).toBeGreaterThan(average(boards));
+  });
+
+  it('grows moss only along the bottom edge', () => {
+    const moss = samples.filter((s) => s.type === DIRT_TYPE.moss);
+    expect(moss.length).toBeGreaterThan(20);
+    for (const s of moss) expect(s.y).toBeLessThan(0.3);
+  });
+
+  it('is the same every time for the same seed', () => {
+    const again = fenceDirt({ height, seed: 4 });
+    expect(again.dirtAt(3.3, 0.7)).toBe(dirtAt(3.3, 0.7));
   });
 });
