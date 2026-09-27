@@ -1,0 +1,57 @@
+import { describe, expect, it } from 'vitest';
+import { WetnessMap } from './WetnessMap.js';
+
+describe('WetnessMap', () => {
+  it('starts dry', () => {
+    const map = new WetnessMap(10, 10);
+    expect(Math.max(...map.wetness)).toBe(0);
+  });
+
+  it('soaks the middle fully, fades at the edge, and leaves the outside dry', () => {
+    const map = new WetnessMap(40, 40);
+    map.soak(20.5, 20.5, 10);
+    expect(map.get(20, 20)).toBe(1);
+    expect(map.get(28, 20)).toBeGreaterThan(0); // 0.8 × radius: in the soft edge
+    expect(map.get(28, 20)).toBeLessThan(1);
+    expect(map.get(31, 20)).toBe(0); // beyond the radius
+  });
+
+  it('never makes an already wetter spot drier', () => {
+    const map = new WetnessMap(40, 40);
+    map.soak(20.5, 20.5, 10);
+    map.soak(29.5, 20.5, 10); // soft edge of this stamp overlaps the first stamp's center
+    expect(map.get(20, 20)).toBe(1);
+  });
+
+  it('leaves a continuous trail on a fast sweep', () => {
+    const map = new WetnessMap(200, 20);
+    map.soakStroke({ x: 10, y: 10 }, { x: 190, y: 10 }, 4);
+    for (let x = 12; x <= 188; x++) expect(map.get(x, 10)).toBeGreaterThan(0.5);
+  });
+
+  it('dries at a steady rate and is completely dry after dryTime', () => {
+    const map = new WetnessMap(20, 20);
+    map.soak(10, 10, 5);
+    map.dry(2, 8);
+    expect(map.get(9, 9)).toBeCloseTo(0.75);
+    for (let i = 0; i < 10; i++) map.dry(1, 8);
+    expect(Math.max(...map.wetness)).toBe(0);
+  });
+
+  it('skips the work (and reports no change) once everything is dry', () => {
+    const map = new WetnessMap(20, 20);
+    map.soak(10, 10, 5);
+    map.dry(9, 8);
+    map.takeChanges();
+    map.dry(0.016, 8);
+    expect(map.takeChanges()).toBe(false);
+  });
+
+  it('flags changes when soaked', () => {
+    const map = new WetnessMap(20, 20);
+    expect(map.takeChanges()).toBe(false);
+    map.soak(5, 5, 2);
+    expect(map.takeChanges()).toBe(true);
+    expect(map.takeChanges()).toBe(false);
+  });
+});
