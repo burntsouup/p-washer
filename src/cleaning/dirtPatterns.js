@@ -182,3 +182,84 @@ function memoizedPattern(sample) {
   };
   return { dirtAt: (x, y) => at(x, y).dirt, typeAt: (x, y) => at(x, y).type };
 }
+
+/**
+ * Patio layout shared by the paver texture and its dirt: square pavers in a running bond
+ * (every other row shifted by half a paver), with joints between them. Meters.
+ */
+export const PATIO_PAVER = { size: 0.45, joint: 0.03 };
+
+/**
+ * Where a point falls in the paver layout.
+ *
+ * @param {number} x Meters across the patio.
+ * @param {number} y Meters along the patio.
+ * @returns {{ inJoint: boolean, row: number, column: number }}
+ */
+export function paverAt(x, y) {
+  const module = PATIO_PAVER.size + PATIO_PAVER.joint;
+  const row = Math.floor(y / module);
+  const shifted = x + (row % 2 === 0 ? 0 : module / 2);
+  const column = Math.floor(shifted / module);
+  const inJoint =
+    shifted - column * module < PATIO_PAVER.joint || y - row * module < PATIO_PAVER.joint;
+  return { inJoint, row, column };
+}
+
+/**
+ * A paved patio behind the house:
+ * - light: a film on every paver, a little different on each one
+ * - dirty: brown leaf stains here and there; grime packed into every joint
+ * - extreme: a greasy barbecue spot
+ * - moss (tough): growing along the joints, most of all in the shade by the house (y = 0)
+ *
+ * @param {{ width: number, length: number, seed: number }} options
+ *   x across (0..width), y from the house (0) out into the yard (length), in meters.
+ * @returns {DirtPattern}
+ */
+export function patioDirt({ width, length, seed }) {
+  const random = createRandom(seed);
+  const noise = createValueNoise(seed);
+  const { light, dirty, extreme } = DIRT_LEVELS;
+  const leaves = Array.from({ length: 9 }, () => ({
+    x: random() * width,
+    y: random() * length,
+    radius: 0.08 + random() * 0.1,
+  }));
+  const grease = { x: width * (0.65 + random() * 0.2), y: length * (0.55 + random() * 0.3) };
+
+  /** @param {number} x @param {number} y */
+  const sample = (x, y) => {
+    const { inJoint, row, column } = paverAt(x, y);
+    const paverShade = noise(column * 1.7 + 0.3, row * 1.3 + 0.7); // each paver a bit different
+    const grain = noise(x * 9 + 40, y * 9 + 40);
+
+    // A film on every paver.
+    let dirt = light + (paverShade - 0.5) * 0.12 + (grain - 0.5) * 0.08;
+    // Leaf stains: small soft brown blotches.
+    for (const leaf of leaves) {
+      const d = Math.hypot(x - leaf.x, y - leaf.y);
+      dirt = Math.max(dirt, (1 - smoothstep(leaf.radius * 0.4, leaf.radius, d)) * (dirty + 0.1));
+    }
+    // A greasy barbecue spot.
+    const greaseDistance = Math.hypot(x - grease.x, y - grease.y) + (grain - 0.5) * 0.08;
+    dirt = Math.max(dirt, (1 - smoothstep(0.18, 0.34, greaseDistance)) * extreme);
+
+    // Joints: packed grime everywhere, and moss in patches, most of all near the house.
+    let isMoss = false;
+    if (inJoint) {
+      dirt = Math.max(dirt, dirty + 0.1 + grain * 0.1);
+      const shade = 1 - smoothstep(0, length * 0.8, y);
+      const patches = smoothstep(0.35, 0.55, fractalNoise(noise, x * 1.3 + 70, y * 1.3 + 70, 3));
+      const mossDirt = (0.35 + 0.65 * shade) * patches * (0.7 + grain * 0.25);
+      isMoss = mossDirt > 0.3 && mossDirt >= dirt;
+      if (isMoss) dirt = mossDirt;
+    }
+
+    return {
+      dirt: Math.min(1, Math.max(0, dirt)),
+      type: isMoss ? DIRT_TYPE.moss : DIRT_TYPE.grime,
+    };
+  };
+  return memoizedPattern(sample);
+}
