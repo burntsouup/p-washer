@@ -59,12 +59,19 @@ export class Input {
     return this.mouseButtons.has(button);
   }
 
-  lockPointer() {
+  async lockPointer() {
     // Ask for raw mouse movement (no OS acceleration); fall back if the browser can't.
-    const request = /** @type {any} */ (this.canvas).requestPointerLock({
-      unadjustedMovement: true,
-    });
-    if (request instanceof Promise) request.catch(() => this.canvas.requestPointerLock());
+    // If both fail (e.g. the page isn't focused yet), the next click simply tries again.
+    const canvas = /** @type {any} */ (this.canvas);
+    try {
+      await canvas.requestPointerLock({ unadjustedMovement: true });
+    } catch {
+      try {
+        await canvas.requestPointerLock();
+      } catch {
+        // Nothing to do; stay on the "click to play" screen.
+      }
+    }
   }
 
   releaseAll() {
