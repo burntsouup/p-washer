@@ -21,6 +21,30 @@ export function toEllipse(shape) {
 }
 
 /**
+ * The texels (inclusive, clipped to the grid) in the box that just contains the ellipse, or
+ * null if it lies entirely off the grid.
+ *
+ * @param {number} gridWidth
+ * @param {number} gridHeight
+ * @param {number} centerX
+ * @param {number} centerY
+ * @param {Ellipse} ellipse
+ * @returns {import('./rect.js').Rect | null}
+ */
+export function ellipseBounds(gridWidth, gridHeight, centerX, centerY, ellipse) {
+  const { radiusX, radiusY, angle } = ellipse;
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  const halfWidth = Math.hypot(radiusX * cos, radiusY * sin);
+  const halfHeight = Math.hypot(radiusX * sin, radiusY * cos);
+  const minX = Math.max(0, Math.floor(centerX - halfWidth));
+  const maxX = Math.min(gridWidth - 1, Math.ceil(centerX + halfWidth));
+  const minY = Math.max(0, Math.floor(centerY - halfHeight));
+  const maxY = Math.min(gridHeight - 1, Math.ceil(centerY + halfHeight));
+  return minX > maxX || minY > maxY ? null : { minX, minY, maxX, maxY };
+}
+
+/**
  * Calls `visit` for every texel whose center is inside the ellipse, with its index and its
  * distance from the center (0 at the middle, approaching 1 at the edge).
  *
@@ -30,18 +54,15 @@ export function toEllipse(shape) {
  * @param {number} centerY
  * @param {Ellipse} ellipse
  * @param {(index: number, distance: number) => void} visit
+ * @returns {import('./rect.js').Rect | null} The box it looked in (null if off the grid).
  */
 export function forEachTexelInEllipse(gridWidth, gridHeight, centerX, centerY, ellipse, visit) {
+  const bounds = ellipseBounds(gridWidth, gridHeight, centerX, centerY, ellipse);
+  if (!bounds) return null;
   const { radiusX, radiusY, angle } = ellipse;
   const cos = Math.cos(angle);
   const sin = Math.sin(angle);
-  // Half the size of the box that just contains the rotated ellipse.
-  const halfWidth = Math.hypot(radiusX * cos, radiusY * sin);
-  const halfHeight = Math.hypot(radiusX * sin, radiusY * cos);
-  const minX = Math.max(0, Math.floor(centerX - halfWidth));
-  const maxX = Math.min(gridWidth - 1, Math.ceil(centerX + halfWidth));
-  const minY = Math.max(0, Math.floor(centerY - halfHeight));
-  const maxY = Math.min(gridHeight - 1, Math.ceil(centerY + halfHeight));
+  const { minX, maxX, minY, maxY } = bounds;
 
   for (let y = minY; y <= maxY; y++) {
     const dy = y + 0.5 - centerY;
@@ -54,6 +75,7 @@ export function forEachTexelInEllipse(gridWidth, gridHeight, centerX, centerY, e
       if (distanceSquared < 1) visit(y * gridWidth + x, Math.sqrt(distanceSquared));
     }
   }
+  return bounds;
 }
 
 /**

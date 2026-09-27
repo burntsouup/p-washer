@@ -1,5 +1,6 @@
 // @ts-check
 import { ellipseReach, forEachTexelInEllipse, toEllipse } from './brushShape.js';
+import { fullRect, unionRect } from './rect.js';
 
 /**
  * How wet each spot of a surface is: 0 (dry) to 1 (soaked). Uses the same grid as the
@@ -20,7 +21,10 @@ export class WetnessMap {
     this.width = width;
     this.height = height;
     this.wetness = new Float32Array(width * height);
-    this.changed = false;
+    /** @type {import('./rect.js').Rect | null} Everywhere that might still be wet. */
+    this.wetRect = null;
+    /** @type {import('./rect.js').Rect | null} The part changed since last taken. */
+    this.changedRect = null;
     // Starts fully dry, so drying has nothing to do until the first soak.
     this.secondsSinceSoak = Number.POSITIVE_INFINITY;
   }
@@ -43,11 +47,20 @@ export class WetnessMap {
   soak(centerX, centerY, shape) {
     const ellipse = toEllipse(typeof shape === 'number' ? { radius: shape } : shape);
     const { wetness } = this;
-    forEachTexelInEllipse(this.width, this.height, centerX, centerY, ellipse, (i, t) => {
-      const soaked = t < 0.6 ? 1 : 1 - (t - 0.6) / 0.4;
-      if (soaked > wetness[i]) wetness[i] = soaked;
-    });
-    this.changed = true;
+    const bounds = forEachTexelInEllipse(
+      this.width,
+      this.height,
+      centerX,
+      centerY,
+      ellipse,
+      (i, t) => {
+        const soaked = t < 0.6 ? 1 : 1 - (t - 0.6) / 0.4;
+        if (soaked > wetness[i]) wetness[i] = soaked;
+      },
+    );
+    if (!bounds) return;
+    this.wetRect = unionRect(this.wetRect, bounds);
+    this.changedRect = unionRect(this.changedRect, bounds);
     this.secondsSinceSoak = 0;
   }
 
@@ -81,27 +94,43 @@ export class WetnessMap {
    */
   dry(dt, dryTime) {
     // Everything is already dry: skip the work entirely.
-    if (this.secondsSinceSoak >= dryTime) return;
+    const wet = this.wetRect;
+    if (!wet || this.secondsSinceSoak >= dryTime) return;
     this.secondsSinceSoak += dt;
     const amount = dt / dryTime;
-    const { wetness } = this;
-    for (let i = 0; i < wetness.length; i++) {
-      if (wetness[i] > 0) wetness[i] = Math.max(0, wetness[i] - amount);
+    const { wetness, width } = this;
+    // Only the area that was soaked can be wet, so only look there.
+    for (let y = wet.minY; y <= wet.maxY; y++) {
+      for (let i = y * width + wet.minX, end = y * width + wet.maxX; i <= end; i++) {
+        if (wetness[i] > 0) wetness[i] = Math.max(0, wetness[i] - amount);
+      }
     }
-    this.changed = true;
+    this.changedRect = unionRect(this.changedRect, wet);
+    // A soaked spot dries in dryTime, so by now everything is dry.
+    if (this.secondsSinceSoak >= dryTime) this.wetRect = null;
   }
 
-  /** Whether the wetness changed since the last call. */
+  /**
+   * The part of the grid that changed since the last call (or null).
+   *
+   * @returns {import('./rect.js').Rect | null}
+   */
+  takeChangedRect() {
+    const rect = this.changedRect;
+    this.changedRect = null;
+    return rect;
+  }
+
+  /** Whether the wetness changed since the last call (and forget the changes). */
   takeChanges() {
-    const changed = this.changed;
-    this.changed = false;
-    return changed;
+    return this.takeChangedRect() !== null;
   }
 
   /** Instantly dries everything (e.g. when restarting a job). */
   dryCompletely() {
     this.wetness.fill(0);
     this.secondsSinceSoak = Number.POSITIVE_INFINITY;
-    this.changed = true;
+    this.wetRect = null;
+    this.changedRect = fullRect(this.width, this.height);
   }
 }

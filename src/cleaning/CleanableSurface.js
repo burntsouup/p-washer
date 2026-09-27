@@ -2,6 +2,7 @@ import { Constants, RawTexture, Texture, Vector3, VertexBuffer } from '@babylonj
 import { config } from '../config.js';
 import { DIRT_TYPE, DirtMask } from './DirtMask.js';
 import { DirtMaterialPlugin } from './DirtMaterialPlugin.js';
+import { unionRect } from './rect.js';
 import { gridSize, texelCenterInMeters, uvAxesFromTriangle, uvToTexel } from './surfaceMath.js';
 import { WetnessMap } from './WetnessMap.js';
 
@@ -35,9 +36,11 @@ export class CleanableSurface {
     this.fillWithStartingDirt();
 
     // Four bytes per texel: red = dirt, green = wetness, blue = moss (0..255 each), alpha unused.
-    this.pixels = new Uint8Array(this.grid.width * this.grid.height * 4);
+    // Each upload packs just the changed rectangle into this buffer (sized for the worst case).
+    this.uploadBuffer = new Uint8Array(this.grid.width * this.grid.height * 4);
+    this.engine = scene.getEngine();
     this.texture = new RawTexture(
-      this.pixels,
+      this.uploadBuffer,
       this.grid.width,
       this.grid.height,
       Constants.TEXTUREFORMAT_RGBA,
@@ -94,20 +97,42 @@ export class CleanableSurface {
     this.uploadIfChanged();
   }
 
-  /** Copies dirt and wetness to the GPU, but only if either changed since last time. */
+  /**
+   * Copies dirt and wetness to the GPU, but only the rectangle that changed since last time
+   * (often just the area around the spray), and nothing at all if nothing changed.
+   */
   uploadIfChanged() {
-    const dirtChanged = this.mask.takeChanges();
-    const wetChanged = this.wetness.takeChanges();
-    if (!dirtChanged && !wetChanged) return;
+    const rect = unionRect(this.mask.takeChangedRect(), this.wetness.takeChangedRect());
+    const internal = this.texture.getInternalTexture();
+    if (!rect || !internal) return;
     const { dirt, type } = this.mask;
     const { wetness } = this.wetness;
-    const { pixels } = this;
-    for (let i = 0; i < dirt.length; i++) {
-      pixels[i * 4] = Math.round(dirt[i] * 255);
-      pixels[i * 4 + 1] = Math.round(wetness[i] * 255);
-      pixels[i * 4 + 2] = type[i] === DIRT_TYPE.moss ? 255 : 0;
+    const gridWidth = this.grid.width;
+    const width = rect.maxX - rect.minX + 1;
+    const height = rect.maxY - rect.minY + 1;
+    const data = this.uploadBuffer.subarray(0, width * height * 4);
+    let o = 0;
+    for (let y = rect.minY; y <= rect.maxY; y++) {
+      for (let i = y * gridWidth + rect.minX, end = y * gridWidth + rect.maxX; i <= end; i++) {
+        // `(v * 255 + 0.5) | 0` rounds 0..1 to 0..255, a little faster than Math.round.
+        data[o++] = (dirt[i] * 255 + 0.5) | 0;
+        data[o++] = (wetness[i] * 255 + 0.5) | 0;
+        data[o++] = type[i] === DIRT_TYPE.moss ? 255 : 0;
+        data[o++] = 0;
+      }
     }
-    this.texture.update(pixels);
+    const generateMipMaps = true; // keep the smaller copies in sync, so distant dirt is right
+    this.engine.updateTextureData(
+      internal,
+      data,
+      rect.minX,
+      rect.minY,
+      width,
+      height,
+      0,
+      0,
+      generateMipMaps,
+    );
   }
 }
 
