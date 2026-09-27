@@ -3,10 +3,11 @@ import { config } from '../config.js';
 import { DirtMask } from './DirtMask.js';
 import { DirtMaterialPlugin } from './DirtMaterialPlugin.js';
 import { gridSize, texelCenterInMeters, uvToTexel } from './surfaceMath.js';
+import { WetnessMap } from './WetnessMap.js';
 
 /**
- * Connects one flat mesh (like the driveway) to its dirt: the DirtMask data, a texture the
- * GPU can read, and the material plugin that draws the dirt.
+ * Connects one flat mesh (like the driveway) to its dirt and wetness: the data grids, a
+ * texture the GPU can read, and the material plugin that draws them.
  */
 export class CleanableSurface {
   /**
@@ -28,18 +29,20 @@ export class CleanableSurface {
       const point = texelCenterInMeters(x, y, this.grid, width, length);
       return dirtAt(point.x, point.y);
     });
+    this.wetness = new WetnessMap(this.grid.width, this.grid.height);
 
-    // One byte per texel (0..255) is plenty of precision for drawing.
-    this.pixels = new Uint8Array(this.grid.width * this.grid.height);
-    this.texture = RawTexture.CreateRTexture(
+    // Two bytes per texel: red = dirt, green = wetness (0..255 each).
+    this.pixels = new Uint8Array(this.grid.width * this.grid.height * 2);
+    this.texture = new RawTexture(
       this.pixels,
       this.grid.width,
       this.grid.height,
+      Constants.TEXTUREFORMAT_RG,
       scene,
       true, // mipmaps: smaller copies that keep the dirt from shimmering at a distance
-      false, // row 0 of the data is v = 0, same as the mask
+      false, // row 0 of the data is v = 0, same as the grids
       Texture.TRILINEAR_SAMPLINGMODE,
-      Constants.TEXTURETYPE_UNSIGNED_BYTE, // one byte per texel (the default would be floats)
+      Constants.TEXTURETYPE_UNSIGNED_BYTE,
     );
     this.texture.wrapU = Texture.CLAMP_ADDRESSMODE;
     this.texture.wrapV = Texture.CLAMP_ADDRESSMODE;
@@ -47,7 +50,7 @@ export class CleanableSurface {
     // Give this mesh its own material, so the dirt doesn't appear on anything sharing it.
     const material = /** @type {import('@babylonjs/core').Material} */ (mesh.material);
     mesh.material = material.clone(`${mesh.name}DirtMat`);
-    this.plugin = new DirtMaterialPlugin(mesh.material, this.texture, config.cleaning.dirtColors);
+    this.plugin = new DirtMaterialPlugin(mesh.material, this.texture);
 
     this.uploadIfChanged();
   }
@@ -65,11 +68,24 @@ export class CleanableSurface {
     return meters * this.texelsPerMeter;
   }
 
-  /** Copies the dirt to the GPU, but only if it changed since last time. */
+  /** @param {number} dt Seconds since the previous frame. */
+  update(dt) {
+    this.wetness.dry(dt, config.cleaning.dryTime);
+    this.uploadIfChanged();
+  }
+
+  /** Copies dirt and wetness to the GPU, but only if either changed since last time. */
   uploadIfChanged() {
-    if (!this.mask.takeChanges()) return;
+    const dirtChanged = this.mask.takeChanges();
+    const wetChanged = this.wetness.takeChanges();
+    if (!dirtChanged && !wetChanged) return;
     const { dirt } = this.mask;
-    for (let i = 0; i < dirt.length; i++) this.pixels[i] = Math.round(dirt[i] * 255);
-    this.texture.update(this.pixels);
+    const { wetness } = this.wetness;
+    const { pixels } = this;
+    for (let i = 0; i < dirt.length; i++) {
+      pixels[i * 2] = Math.round(dirt[i] * 255);
+      pixels[i * 2 + 1] = Math.round(wetness[i] * 255);
+    }
+    this.texture.update(pixels);
   }
 }

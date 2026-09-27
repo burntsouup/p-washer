@@ -18,6 +18,7 @@ JavaScript.
 | Shift         | Run                                            |
 | E             | Pick up the pressure washer (when close)       |
 | Hold click    | Spray                                          |
+| M             | Mute / unmute                                  |
 | Esc           | Release the mouse                              |
 | `` ` `` (key) | Toggle the Babylon Inspector (dev builds only) |
 
@@ -53,15 +54,14 @@ src/
   environment/         The level: layout (Backyard.js), lighting + sky, greybox shape kit
   player/              The player character (movement.js is the tested, pure part)
   camera/              Third-person camera (cameraMath.js is the tested, pure part)
-  cleaning/            Dirt: DirtMask (grid + brush), patterns, the dirt shader, CleaningSystem
-  pressure-washer/     The machine, the spray gun, aiming, and the water beam
+  cleaning/            Dirt and wetness grids, patterns, the dirt shader, CleaningSystem
+  pressure-washer/     The machine, the spray gun, aiming, water beam and particles
+  audio/               Synthesized sounds (audioMix.js is the tested, pure part)
   ui/                  HTML overlay: crosshair, prompts, "click to play", FPS
 docs/
   ROADMAP.md           Milestones and checklists (our plan)
   DECISIONS.md         Why things are the way they are
 ```
-
-The `audio/` folder is added by the milestone that needs it.
 
 **Rule of thumb:** files that import Babylon.js are glue. Game logic and math go in "pure"
 files (no Babylon imports) with a `*.test.js` file next to them.

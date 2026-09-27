@@ -67,11 +67,14 @@ washing the driveway should feel good. See the success checklist at the bottom.
 - [x] Basic water beam; the body faces the aim and moves slower while spraying
 - [x] Tests: spray falloff, aim direction and fallbacks
 
-### 8. Spray feedback
+### 8. Spray feedback ✅
 
-- [ ] Better beam, impact splash + mist, dirt-colored splatter
-- [ ] Wet surfaces darken and dry over time
-- [ ] Audio: spray loop, impact layer, dirt-stripping layer (synthesized placeholder is fine)
+- [x] Better beam: flat fan with rushing streaks, a bright core jet, slight wobble
+- [x] Particles: water splash, soft mist, and brown dirt splatter that follows dirt removed
+- [x] Wet surfaces darken, pick up a sky sheen and sun glints, and dry over ~8 s
+- [x] Audio (synthesized, no files): engine hum, nozzle hiss, water impact, dirt-stripping
+      crackle, pickup clunk; `M` mutes
+- [x] Tests: wetness grid (soak, strokes, drying), audio mix rules
 
 ### 9. Job progress and completion
 

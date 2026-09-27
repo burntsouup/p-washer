@@ -57,6 +57,9 @@ export const config = {
     cleanRate: 2, // dirt removed per second at full strength (1 = extreme dirt)
     // Dirt colors from light to heavy. Clean concrete is the surface's own color.
     dirtColors: { light: '#9e957f', grime: '#6b604f', oil: '#25211d' },
+    wetSpread: 1.3, // the wet patch is this much wider than the cleaning spot
+    dryTime: 8, // seconds for a soaked spot to dry completely
+    wetDarkening: 0.62, // wet surfaces are multiplied by this (1 = no darkening)
   },
   washer: {
     pickupRange: 1.8, // how close (meters) you need to be to pick up the washer
@@ -64,5 +67,24 @@ export const config = {
     fullStrengthRange: 1.2, // full power up to here, fading to nothing at maxRange
     nozzleRadius: 0.06, // spray spot radius right at the nozzle (meters)
     spreadPerMeter: 0.07, // how much wider the spot gets per meter: ~22 cm radius at 2.3 m
+  },
+  effects: {
+    splashRate: 450, // water droplets per second at full strength
+    mistRate: 50, // soft mist puffs per second
+    splatterPerDirt: 1.2, // dirt droplets per unit of dirt removed per second
+    maxSplatterRate: 500,
+    streamSpeed: 3, // how fast the streaks in the water beam rush outward
+    fanFlatness: 0.45, // beam height ÷ width: a flat fan like a real nozzle tip
+  },
+  audio: {
+    master: 0.7,
+    // Layer volumes (0..1). See audio/audioMix.js for when each one plays.
+    humIdle: 0.05, // engine, once you've picked up the gun
+    humSpraying: 0.1, // engine working harder while spraying
+    hiss: 0.16, // water rushing out of the nozzle
+    impact: 0.22, // water hitting a surface
+    strip: 0.3, // gritty crackle of dirt coming off
+    fullStripRate: 300, // dirt removed per second that gives the loudest stripping sound
+    muteKey: 'KeyM',
   },
 };
