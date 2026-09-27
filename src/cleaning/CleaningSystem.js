@@ -13,6 +13,8 @@ export class CleaningSystem {
     this.surfaces = new Map();
     /** @type {{ surface: import('./CleanableSurface.js').CleanableSurface, point: { x: number, y: number } } | null} */
     this.lastHit = null;
+    /** True while leftover dirt is fading away after a job completes. */
+    this.isFinishing = false;
   }
 
   /** @param {import('./CleanableSurface.js').CleanableSurface} surface */
@@ -64,7 +66,31 @@ export class CleaningSystem {
 
   /** @param {number} dt Seconds since the previous frame. */
   update(dt) {
+    if (this.isFinishing) {
+      // Fade out every leftover speck together; stop once nothing is left.
+      let removed = 0;
+      const amount = dt / config.job.finishFadeTime;
+      for (const { mask } of this.surfaces.values()) removed += mask.fadeAll(amount);
+      if (removed === 0) this.isFinishing = false;
+    }
     // Dry every surface a little and send any changes to the GPU.
     for (const surface of this.surfaces.values()) surface.update(dt);
+  }
+
+  /** Starts the finishing flourish: all remaining dirt fades away over a moment. */
+  finishRemaining() {
+    this.isFinishing = true;
+  }
+
+  /** @param {number} amount 0..1: how strongly to highlight the dirt that's left. */
+  setHighlight(amount) {
+    for (const surface of this.surfaces.values()) surface.plugin.highlight = amount;
+  }
+
+  /** Puts all the dirt back, for another go. */
+  reset() {
+    this.isFinishing = false;
+    this.lastHit = null;
+    for (const surface of this.surfaces.values()) surface.fillWithStartingDirt();
   }
 }

@@ -82,6 +82,8 @@ per-texel texture with mipmaps (~0.1 ms per upload). The alternative, coloring a
 on the CPU, is simpler but can't add wetness or sharp detail later without a rewrite.
 **Gotcha:** the plugin must request UVs (`_needUVs`, `MAINUV1`) because the material has no
 other textures. `RawTexture.CreateRTexture` defaults to float data, so pass the byte type.
+Values that change every frame (the highlight) must be set in `hardBindForSubMesh`, which
+Babylon only calls if the plugin sets `registerForExtraEvents = true` before enabling.
 
 ## 12. Two-ray aiming and distance falloff
 
@@ -103,3 +105,13 @@ each layer from the washer's state, so the sound design rules are readable and t
 same four layers, and list them in `CREDITS.md`.
 **Gotcha:** browsers block audio until the player interacts, so the audio graph is built on
 the first click.
+
+## 14. A job is done at 98%
+
+**Why:** Hunting the last invisible specks is the least fun part of cleaning games. At 98%
+(`config.job.completeAt`) the job completes and leftover dirt fades away in about a second,
+which feels like a reward instead of a chore. The bar shows progress relative to that
+threshold, so it reads 100% exactly at completion. Holding `F` highlights anything still
+counted as dirty, for players who want to find what they missed. The timer starts at the
+first spray so walking around first doesn't count. `R` only restarts after completion, so a
+stray keypress can't wipe your progress.

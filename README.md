@@ -18,6 +18,8 @@ JavaScript.
 | Shift         | Run                                            |
 | E             | Pick up the pressure washer (when close)       |
 | Hold click    | Spray                                          |
+| Hold F        | Highlight the dirt that's left                 |
+| R             | Start over (after the job is done)             |
 | M             | Mute / unmute                                  |
 | Esc           | Release the mouse                              |
 | `` ` `` (key) | Toggle the Babylon Inspector (dev builds only) |

@@ -102,4 +102,11 @@ export class WetnessMap {
     this.changed = false;
     return changed;
   }
+
+  /** Instantly dries everything (e.g. when restarting a job). */
+  dryCompletely() {
+    this.wetness.fill(0);
+    this.secondsSinceSoak = Number.POSITIVE_INFINITY;
+    this.changed = true;
+  }
 }

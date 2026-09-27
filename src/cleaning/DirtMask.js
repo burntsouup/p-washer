@@ -139,6 +139,28 @@ export class DirtMask {
   }
 
   /**
+   * Removes up to `amount` dirt from every texel at once. Used for the finishing flourish
+   * that clears leftover specks when a job completes.
+   *
+   * @param {number} amount
+   * @returns {number} Total dirt actually removed.
+   */
+  fadeAll(amount) {
+    const { dirt } = this;
+    let removed = 0;
+    for (let i = 0; i < dirt.length; i++) {
+      const before = dirt[i];
+      if (before === 0) continue;
+      const after = Math.max(0, before - amount);
+      dirt[i] = after;
+      removed += before - after;
+      if (before > CLEAN_THRESHOLD && after <= CLEAN_THRESHOLD) this.cleanedCount++;
+    }
+    if (removed > 0) this.changed = true;
+    return removed;
+  }
+
+  /**
    * Whether the dirt changed since the last call. The renderer uses this to re-upload the
    * texture only when needed.
    */

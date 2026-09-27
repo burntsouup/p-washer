@@ -1,8 +1,21 @@
+import { formatDuration } from '../game/job.js';
 import './hud.css';
 
 /**
- * The HTML overlay players see: a crosshair and interaction prompts while playing, and a
- * "click to play" card (with controls) whenever the mouse isn't captured.
+ * @typedef {{
+ *   prompt: string | null,
+ *   hasWasher: boolean,
+ *   jobStatus: 'waiting' | 'active' | 'complete',
+ *   progress: number,
+ *   elapsed: number,
+ * }} HudState progress is 0..1 for display; elapsed is seconds on the job.
+ */
+
+/**
+ * The HTML overlay players see:
+ * - while playing: the job objective with a progress bar, a crosshair, interaction prompts,
+ *   and a "Job complete!" card at the end
+ * - otherwise: a "click to play" card with the controls
  */
 export class Hud {
   /**
@@ -12,14 +25,25 @@ export class Hud {
   constructor(root, input) {
     this.input = input;
 
-    this.crosshair = document.createElement('div');
-    this.crosshair.className = 'crosshair';
+    this.crosshair = element('div', 'crosshair');
+    this.prompt = element('div', 'interaction-prompt');
 
-    this.prompt = document.createElement('div');
-    this.prompt.className = 'interaction-prompt';
+    this.objective = element('div', 'objective');
+    this.objectiveTitle = element('div', 'objective-title');
+    const bar = element('div', 'progress-bar');
+    this.progressFill = element('div', 'progress-fill');
+    bar.append(this.progressFill);
+    this.progressLabel = element('div', 'progress-label');
+    this.objective.append(this.objectiveTitle, bar, this.progressLabel);
 
-    this.playPrompt = document.createElement('div');
-    this.playPrompt.className = 'play-prompt';
+    this.completeCard = element('div', 'job-complete');
+    this.completeCard.innerHTML = `
+      <h2>Job complete!</h2>
+      <p>Driveway cleaned in <strong class="job-time"></strong></p>
+      <p class="job-complete-hint">Press R to start over</p>`;
+    this.jobTime = /** @type {HTMLElement} */ (this.completeCard.querySelector('.job-time'));
+
+    this.playPrompt = element('div', 'play-prompt');
     this.playPrompt.innerHTML = `
       <h1>p-washer</h1>
       <p class="play-prompt-action">Click to play</p>
@@ -29,31 +53,73 @@ export class Hud {
         <dt>Shift</dt><dd>Run</dd>
         <dt>E</dt><dd>Pick up the pressure washer</dd>
         <dt>Hold click</dt><dd>Spray</dd>
+        <dt>Hold F</dt><dd>Highlight the dirt that's left</dd>
+        <dt>R</dt><dd>Start over (after the job is done)</dd>
         <dt>M</dt><dd>Mute / unmute</dd>
         <dt>Esc</dt><dd>Release the mouse</dd>
       </dl>`;
 
-    root.append(this.crosshair, this.prompt, this.playPrompt);
-    /** @type {boolean | null} */
-    this.shownLocked = null;
-    /** @type {string | null | undefined} */
-    this.shownPrompt = undefined;
+    root.append(this.objective, this.crosshair, this.prompt, this.completeCard, this.playPrompt);
+    /** What's currently on screen, so we only touch the page when something changes. */
+    this.shown = /** @type {Record<string, unknown>} */ ({});
   }
 
-  /** @param {string | null} promptText Interaction hint to show while playing, if any. */
-  update(promptText) {
-    // Only touch the page when something changed.
+  /** @param {HudState} state */
+  update(state) {
     const locked = this.input.isPointerLocked;
-    if (locked !== this.shownLocked) {
-      this.shownLocked = locked;
+    const complete = state.jobStatus === 'complete';
+
+    this.set('locked', locked, () => {
       this.crosshair.hidden = !locked;
       this.playPrompt.hidden = locked;
-    }
-    const text = locked ? promptText : null;
-    if (text !== this.shownPrompt) {
-      this.shownPrompt = text;
-      this.prompt.textContent = text ?? '';
-      this.prompt.hidden = !text;
-    }
+      this.objective.hidden = !locked;
+    });
+
+    const promptText = locked ? state.prompt : null;
+    this.set('prompt', promptText, () => {
+      this.prompt.textContent = promptText ?? '';
+      this.prompt.hidden = !promptText;
+    });
+
+    const title = state.hasWasher ? 'Clean the driveway' : 'Pick up the pressure washer';
+    this.set('title', complete ? 'Driveway clean!' : title, (text) => {
+      this.objectiveTitle.textContent = /** @type {string} */ (text);
+    });
+
+    // Whole percent only reaches 100 when the job actually completes.
+    const percent = Math.floor(state.progress * 100);
+    this.set('percent', percent, () => {
+      this.progressFill.style.width = `${percent}%`;
+      this.progressLabel.textContent = `${percent}%`;
+      this.objective.classList.toggle('is-complete', complete);
+    });
+
+    this.set('complete', locked && complete, (show) => {
+      this.completeCard.hidden = !show;
+      if (show) this.jobTime.textContent = formatDuration(state.elapsed);
+    });
   }
+
+  /**
+   * Runs `apply` only when `value` differs from what's already on screen.
+   *
+   * @param {string} key
+   * @param {unknown} value
+   * @param {(value: unknown) => void} apply
+   */
+  set(key, value, apply) {
+    if (this.shown[key] === value) return;
+    this.shown[key] = value;
+    apply(value);
+  }
+}
+
+/**
+ * @param {string} tag
+ * @param {string} className
+ */
+function element(tag, className) {
+  const el = document.createElement(tag);
+  el.className = className;
+  return el;
 }
