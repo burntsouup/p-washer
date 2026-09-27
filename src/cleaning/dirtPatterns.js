@@ -101,8 +101,73 @@ export function drivewayDirt({ width, length, seed }) {
     };
   };
 
-  // fill() asks for dirt, then type, at each point in turn, so remember the last point to
-  // avoid computing everything twice.
+  return memoizedPattern(sample);
+}
+
+/** Board layout shared by the fence's wood texture and its dirt: 14 cm boards, 1.2 cm gaps. */
+export const FENCE_BOARD = { width: 0.14, gap: 0.012 };
+
+/**
+ * A weathered wooden fence, seen from the yard:
+ * - light: grey weathering everywhere, a little different on each board
+ * - dirty: dark water stains running down from the top of some boards; grime in the gaps
+ * - heavy: mud splashed up along the bottom
+ * - moss (tough): patches along the damp bottom edge
+ *
+ * @param {{ height: number, seed: number }} options
+ *   x runs along the fence, y up from the ground (0..height), in meters.
+ * @returns {DirtPattern}
+ */
+export function fenceDirt({ height, seed }) {
+  const noise = createValueNoise(seed);
+  const { dirty, heavy } = DIRT_LEVELS;
+
+  /** @param {number} x @param {number} y */
+  const sample = (x, y) => {
+    const board = Math.floor(x / FENCE_BOARD.width);
+    const inGap = x - board * FENCE_BOARD.width < FENCE_BOARD.gap;
+    const boardShade = noise(board * 1.37 + 0.5, 3.1); // each board weathered a bit differently
+    const grain = fractalNoise(noise, x * 3 + 20, y * 14, 2); // wood grain runs up the boards
+
+    // Grey weathering everywhere.
+    let dirt = 0.32 + (boardShade - 0.5) * 0.12 + (grain - 0.5) * 0.08;
+    // Some boards have dark water stains running down from the top.
+    if (boardShade > 0.6) {
+      const stain = smoothstep(height * 0.15, height * 0.9, y) * smoothstep(0.6, 0.75, boardShade);
+      dirt = Math.max(dirt, stain * (dirty + 0.05 + grain * 0.1));
+    }
+    // Grime collects in the gaps between boards.
+    if (inGap) dirt = Math.max(dirt, dirty + 0.1);
+    // Mud splashed up from the ground: a band along the bottom, uneven in height.
+    const splashTop = 0.2 + 0.25 * noise(x * 0.8, 11);
+    const splashes = smoothstep(0.35, 0.6, noise(x * 6 + 50, y * 6 + 50));
+    const splash =
+      (1 - smoothstep(0, splashTop, y)) * Math.max(splashes, 1 - smoothstep(0, 0.1, y));
+    dirt = Math.max(dirt, splash * (heavy + grain * 0.1));
+    // Moss along the damp bottom edge, in patches with ragged tops.
+    const ragged = 0.7 + 0.6 * noise(x * 7 + 300, 5);
+    const mossBand = 1 - smoothstep(0.04, 0.2 * ragged, y);
+    const mossPatches = smoothstep(0.42, 0.58, fractalNoise(noise, x * 1.2 + 90, 3, 3));
+    const mossDirt = mossBand * mossPatches * (0.7 + grain * 0.2);
+    const isMoss = mossDirt > 0.3 && mossDirt >= dirt;
+    if (isMoss) dirt = mossDirt;
+
+    return {
+      dirt: Math.min(1, Math.max(0, dirt)),
+      type: isMoss ? DIRT_TYPE.moss : DIRT_TYPE.grime,
+    };
+  };
+  return memoizedPattern(sample);
+}
+
+/**
+ * Wraps a sampler returning { dirt, type } as a DirtPattern. fill() asks for dirt, then type,
+ * at each point in turn, so it remembers the last point to avoid computing everything twice.
+ *
+ * @param {(x: number, y: number) => { dirt: number, type: number }} sample
+ * @returns {DirtPattern}
+ */
+function memoizedPattern(sample) {
   let lastX = NaN;
   let lastY = NaN;
   let last = { dirt: 0, type: DIRT_TYPE.grime };

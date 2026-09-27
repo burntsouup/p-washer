@@ -1,6 +1,7 @@
-import { MeshBuilder } from '@babylonjs/core';
-import { drivewayDirt } from '../cleaning/dirtPatterns.js';
+import { Color3, MeshBuilder, StandardMaterial } from '@babylonjs/core';
+import { drivewayDirt, FENCE_BOARD, fenceDirt } from '../cleaning/dirtPatterns.js';
 import { Greybox } from './greybox.js';
+import { createBoardTexture } from './surfaceTextures.js';
 
 // Units are meters. +x = right (toward the garage), +z = away from the street, y = up.
 // The street runs along x at the front; the house faces the street.
@@ -17,7 +18,8 @@ const COLORS = {
   garageDoor: '#f1efe9',
   frontDoor: '#8c3b2e',
   window: '#3f4f5f',
-  fence: '#9a7350',
+  fence: '#8c857a', // weathered: the back fence cleans up to warm wood, the rest stays grey
+  cleanWood: '#b98a5e',
   trunk: '#6b4a32',
   leaves: '#4a7a34',
   bush: '#3f6e2e',
@@ -32,6 +34,9 @@ const LAYER = { street: 0.01, marking: 0.02, sidewalk: 0.02, paving: 0.03 };
 const SEAM_OVERLAP = 0.1;
 
 const HOUSE = { left: -8, right: 8, front: 1.5, back: 11.5, wallHeight: 3.2 };
+const FENCE = { gateZ: 7, back: 24, halfWidth: 12, height: 1.6 };
+/** Dirt colors on wood: silvery weathering, mud, and dark water stains. */
+const WOOD_DIRT = { light: '#8f8c83', grime: '#5a5249', oil: '#3a342e' };
 const DRIVEWAY = { width: 5, length: 10, centerX: 4.5 };
 const SIDEWALK = { front: -10, back: -8.5 };
 
@@ -52,6 +57,7 @@ export function createBackyard(scene, shadows) {
   const driveway = buildDriveway(kit);
   buildHouse(kit);
   buildFence(kit);
+  const backFence = buildBackFenceFace(scene);
   buildPlants(kit);
   buildProps(kit);
   buildBounds(kit);
@@ -66,9 +72,20 @@ export function createBackyard(scene, shadows) {
   const cleanables = [
     {
       mesh: driveway,
+      job: 'driveway',
       width: DRIVEWAY.width,
       length: DRIVEWAY.length,
       dirt: drivewayDirt({ width: DRIVEWAY.width, length: DRIVEWAY.length, seed: 1 }),
+    },
+    {
+      // The inside of the back fence: u runs along it (+x), v up from the ground.
+      mesh: backFence,
+      job: 'backyard',
+      width: FENCE.halfWidth * 2,
+      length: FENCE.height,
+      dirt: fenceDirt({ height: FENCE.height, seed: 4 }),
+      texelsPerMeter: 40, // 2.5 cm: plenty for boards, and keeps the long fence affordable
+      palette: WOOD_DIRT,
     },
   ];
 
@@ -159,9 +176,9 @@ function buildHouse(kit) {
  * @param {Greybox} kit
  */
 function buildFence(kit) {
-  const z = 7; // where the fence meets the sides of the house
-  const back = 24;
-  const lot = 12; // half-width of the lot
+  const z = FENCE.gateZ; // where the fence meets the sides of the house
+  const back = FENCE.back;
+  const lot = FENCE.halfWidth;
   /** @type {[number, number, number, number][]} Axis-aligned [x1, z1, x2, z2] runs. */
   const runs = [
     [-lot, z, HOUSE.left, z],
@@ -171,7 +188,7 @@ function buildFence(kit) {
     [HOUSE.right + 1.5, z, lot, z], // leaves a 1.5 m gate gap next to the house
   ];
 
-  const height = 1.6;
+  const height = FENCE.height;
   const postSpacing = 2.4;
   const parts = [];
   for (const [x1, z1, x2, z2] of runs) {
@@ -197,6 +214,35 @@ function buildFence(kit) {
     }
   }
   kit.merge('fence', parts);
+}
+
+/**
+ * The yard-facing side of the back fence, as its own flat panel so it can get dirty and be
+ * cleaned. It sits just in front of the solid fence (which still handles collisions), facing
+ * the house; the posts stick out through it.
+ *
+ * @param {import('@babylonjs/core').Scene} scene
+ */
+function buildBackFenceFace(scene) {
+  const width = FENCE.halfWidth * 2;
+  const face = MeshBuilder.CreatePlane('backFenceFace', { width, height: FENCE.height }, scene);
+  face.position.set(0, FENCE.height / 2, FENCE.back - 0.031);
+  face.receiveShadows = true;
+
+  const boardsPerTile = 8;
+  const boards = createBoardTexture(scene, {
+    boardWidth: FENCE_BOARD.width,
+    gap: FENCE_BOARD.gap,
+    boardsPerTile,
+    seed: 9,
+  });
+  boards.uScale = width / (FENCE_BOARD.width * boardsPerTile); // one tile per 8 boards
+  const material = new StandardMaterial('backFenceMat', scene);
+  material.diffuseTexture = boards;
+  material.diffuseColor = Color3.FromHexString(COLORS.cleanWood);
+  material.specularColor = Color3.Black();
+  face.material = material;
+  return face;
 }
 
 /** @param {Greybox} kit */

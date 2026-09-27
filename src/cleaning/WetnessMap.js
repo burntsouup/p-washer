@@ -43,21 +43,17 @@ export class WetnessMap {
    * @param {number} centerX Texels.
    * @param {number} centerY Texels.
    * @param {number | import('./brushShape.js').BrushShape} shape A radius, or a circle/ellipse.
+   * @param {number} [intensity] How wet the middle gets, 0..1. Default 1 (soaked).
    */
-  soak(centerX, centerY, shape) {
+  soak(centerX, centerY, shape, intensity = 1) {
     const ellipse = toEllipse(typeof shape === 'number' ? { radius: shape } : shape);
     const { wetness } = this;
-    const bounds = forEachTexelInEllipse(
-      this.width,
-      this.height,
-      centerX,
-      centerY,
-      ellipse,
-      (i, t) => {
-        const soaked = t < 0.6 ? 1 : 1 - (t - 0.6) / 0.4;
-        if (soaked > wetness[i]) wetness[i] = soaked;
-      },
-    );
+    /** @param {number} i @param {number} t */
+    const wet = (i, t) => {
+      const soaked = (t < 0.6 ? 1 : 1 - (t - 0.6) / 0.4) * intensity;
+      if (soaked > wetness[i]) wetness[i] = soaked;
+    };
+    const bounds = forEachTexelInEllipse(this.width, this.height, centerX, centerY, ellipse, wet);
     if (!bounds) return;
     this.wetRect = unionRect(this.wetRect, bounds);
     this.changedRect = unionRect(this.changedRect, bounds);
@@ -83,6 +79,26 @@ export class WetnessMap {
     for (let s = 1; s <= stamps; s++) {
       const t = s / stamps;
       this.soak(from.x + dx * t, from.y + dy * t, ellipse);
+    }
+  }
+
+  /**
+   * A thin line of water running from a point, like a drip trickling down a wall. It fades
+   * from `startWetness` to `endWetness` along its length.
+   *
+   * @param {{ x: number, y: number }} from Texels.
+   * @param {{ x: number, y: number }} direction Unit vector in texels (which way is "down").
+   * @param {number} length Texels.
+   * @param {number} width Texels.
+   * @param {number} startWetness
+   * @param {number} endWetness
+   */
+  trickle(from, direction, length, width, startWetness, endWetness) {
+    const steps = Math.max(1, Math.ceil(length / (width * 0.5)));
+    for (let s = 0; s <= steps; s++) {
+      const t = s / steps;
+      const wet = startWetness + (endWetness - startWetness) * t;
+      this.soak(from.x + direction.x * length * t, from.y + direction.y * length * t, width, wet);
     }
   }
 

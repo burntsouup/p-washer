@@ -177,11 +177,16 @@ logic tested, feel checked by playing.
 - [x] Tests: changed/wet areas grow on scrub/soak, stay empty when nothing changes, and clear
       once dry
 
-### 15. The fence: a vertical surface
+### 15. The fence: a vertical surface ✅
 
-- [ ] Backyard-side fence faces become cleanable (flat panels with clean UVs)
-- [ ] Weathered grey wood that cleans back to warm brown, moss and mud splash along the bottom
-- [ ] Juice: wet streaks running down vertical surfaces
+- [x] The yard side of the back fence is a cleanable panel (24 × 1.6 m, 2.5 cm texels) in
+      front of the solid fence, with boards and gaps drawn in code
+- [x] Weathered grey wood that cleans back to warm brown; water stains running down some
+      boards, grime in the gaps, mud splash and moss along the bottom
+- [x] Juice: on upright surfaces, water trickles down in streaks
+- [x] Surfaces belong to a job; progress, the finishing fade, the highlight, and resets are per
+      job, so the fence doesn't count toward the driveway (it becomes the backyard job in M17)
+- [x] Tests: trickles, fence pattern (weathering, mud, gaps, moss), per-job bookkeeping
 
 ### 16. The patio: pavers and grout
 
