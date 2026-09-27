@@ -13,14 +13,15 @@ export class DirtMaterialPlugin extends MaterialPluginBase {
   /**
    * @param {import('@babylonjs/core').Material} material
    * @param {import('@babylonjs/core').BaseTexture} dirtTexture
+   * @param {{ light: string, grime: string, oil: string }} palette Dirt colors, light to heavy.
    */
-  constructor(material, dirtTexture) {
+  constructor(material, dirtTexture, palette) {
     super(material, 'DirtMask', 200, { DIRTMASK: false });
-    const { dirtColors, mossColors } = config.cleaning;
+    const { mossColors } = config.cleaning;
     this.dirtTexture = dirtTexture;
-    this.colorLight = Color3.FromHexString(dirtColors.light);
-    this.colorGrime = Color3.FromHexString(dirtColors.grime);
-    this.colorOil = Color3.FromHexString(dirtColors.oil);
+    this.colorLight = Color3.FromHexString(palette.light);
+    this.colorGrime = Color3.FromHexString(palette.grime);
+    this.colorOil = Color3.FromHexString(palette.oil);
     this.mossLight = Color3.FromHexString(mossColors.light);
     this.mossDark = Color3.FromHexString(mossColors.dark);
     this.skyColor = Color3.FromHexString(config.render.sky.horizon);

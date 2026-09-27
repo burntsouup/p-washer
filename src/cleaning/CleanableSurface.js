@@ -13,21 +13,20 @@ import { WetnessMap } from './WetnessMap.js';
 export class CleanableSurface {
   /**
    * @param {import('@babylonjs/core').Scene} scene
-   * @param {{
-   *   mesh: import('@babylonjs/core').Mesh,
-   *   width: number,
-   *   length: number,
-   *   dirt: import('./dirtPatterns.js').DirtPattern,
-   * }} definition Size in meters, and the starting dirt (amount and type) in meters.
+   * @param {SurfaceDefinition} definition
    */
-  constructor(scene, { mesh, width, length, dirt }) {
+  constructor(scene, definition) {
+    const { mesh, width, length, dirt, job } = definition;
     this.mesh = mesh;
+    this.job = job;
     this.width = width;
     this.length = length;
     this.pattern = dirt;
-    this.grid = gridSize(width, length, config.cleaning.texelsPerMeter);
+    const texelsPerMeter = definition.texelsPerMeter ?? config.cleaning.texelsPerMeter;
+    this.grid = gridSize(width, length, texelsPerMeter);
     this.texelsPerMeter = this.grid.width / width; // actual, after rounding to whole texels
     this.axes = worldAxesOf(mesh); // which way the texture runs, to lay the spray on it
+    this.down = downhillInTexels(this.axes); // which way water runs, if the surface is upright
 
     this.mask = new DirtMask(this.grid.width, this.grid.height);
     // Grime comes off with any spray; moss follows config (by reference, so it's live-tunable).
@@ -53,10 +52,14 @@ export class CleanableSurface {
     this.texture.wrapU = Texture.CLAMP_ADDRESSMODE;
     this.texture.wrapV = Texture.CLAMP_ADDRESSMODE;
 
-    // Give this mesh its own material, so the dirt doesn't appear on anything sharing it.
+    // The dirt must only appear on this mesh, so if its material is shared (like the concrete
+    // the walkway also uses), give it a copy. Only copy when needed: copying also copies the
+    // material's textures, and a copied canvas texture starts out blank.
     const material = /** @type {import('@babylonjs/core').Material} */ (mesh.material);
-    mesh.material = material.clone(`${mesh.name}DirtMat`);
-    this.plugin = new DirtMaterialPlugin(mesh.material, this.texture);
+    const shared = scene.meshes.some((other) => other !== mesh && other.material === material);
+    if (shared) mesh.material = material.clone(`${mesh.name}DirtMat`);
+    const palette = definition.palette ?? config.cleaning.dirtColors;
+    this.plugin = new DirtMaterialPlugin(mesh.material, this.texture, palette);
 
     this.uploadIfChanged();
   }
@@ -160,4 +163,31 @@ function worldAxesOf(mesh) {
   return { uAxis, vAxis, normal };
 }
 
+/**
+ * Which way "downhill" runs across the surface, in texel coordinates (a unit vector), or null
+ * if the surface is close to flat and water just soaks in.
+ *
+ * @param {{ uAxis: Vec3, vAxis: Vec3 }} axes
+ */
+function downhillInTexels({ uAxis, vAxis }) {
+  const x = -uAxis.y; // world down (0, -1, 0) measured along u...
+  const y = -vAxis.y; // ...and along v
+  const steepness = Math.hypot(x, y);
+  return steepness > 0.5 ? { x: x / steepness, y: y / steepness } : null;
+}
+
 /** @typedef {{ x: number, y: number, z: number }} Vec3 */
+
+/**
+ * @typedef {{
+ *   mesh: import('@babylonjs/core').Mesh,
+ *   job: string,
+ *   width: number,
+ *   length: number,
+ *   dirt: import('./dirtPatterns.js').DirtPattern,
+ *   texelsPerMeter?: number,
+ *   palette?: { light: string, grime: string, oil: string },
+ * }} SurfaceDefinition
+ *   width across (u) and length along (v) in meters; the starting dirt, in meters; which job
+ *   it belongs to; optional detail level and dirt colors (default: concrete).
+ */

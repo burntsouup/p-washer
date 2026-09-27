@@ -54,6 +54,7 @@ export class Game {
       this.level.washerSpot,
     );
     this.audio = new AudioSystem();
+    this.jobId = 'driveway'; // Milestone 17 adds the backyard job after this one
     this.job = new Job(config.job.completeAt);
     this.celebration = new Celebration(this.scene);
     this.highlight = 0; // 0..1, eases in and out while the highlight key is held
@@ -93,7 +94,7 @@ export class Game {
       prompt: this.washer.prompt,
       hasWasher: this.washer.isEquipped,
       jobStatus: this.job.status,
-      progress: this.job.displayProgress(this.cleaning.progress),
+      progress: this.job.displayProgress(this.cleaning.progressFor(this.jobId)),
       elapsed: this.job.elapsed,
       fanVertical: this.washer.fanVertical,
     });
@@ -107,20 +108,23 @@ export class Game {
    */
   updateJob(dt) {
     this.time += dt;
-    const event = this.job.update(dt, this.cleaning.progress, this.washer.isSpraying);
+    const jobId = this.jobId;
+    const progress = this.cleaning.progressFor(jobId);
+    const event = this.job.update(dt, progress, this.washer.isSpraying);
     if (event === 'completed') {
-      this.cleaning.finishRemaining(); // leftover specks fade away
-      for (const surface of this.cleaning.surfaces.values()) this.celebration.play(surface.mesh);
+      this.cleaning.finishRemaining(jobId); // leftover specks fade away
+      for (const surface of this.cleaning.surfacesFor(jobId)) this.celebration.play(surface.mesh);
       this.audio.playChime();
     }
 
     // Hold the key to make remaining dirt glow, pulsing gently so it catches the eye.
     const held = this.input.isPointerLocked && this.input.isDown(config.job.highlightKey);
     this.highlight = smoothTowards(this.highlight, held ? 1 : 0, dt, 12);
-    this.cleaning.setHighlight(this.highlight * (0.75 + 0.25 * Math.sin(this.time * 6)));
+    const pulse = this.highlight * (0.75 + 0.25 * Math.sin(this.time * 6));
+    this.cleaning.setHighlight(pulse, jobId);
 
     if (this.job.isComplete && this.input.wasPressed(config.job.resetKey)) {
-      this.cleaning.reset();
+      this.cleaning.reset(jobId);
       this.job.reset();
     }
   }

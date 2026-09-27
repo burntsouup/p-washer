@@ -30,8 +30,17 @@ export class CleaningSystem {
     this.surfaces = new Map();
     /** @type {{ surface: import('./CleanableSurface.js').CleanableSurface, point: { x: number, y: number } } | null} */
     this.lastHit = null;
-    /** True while leftover dirt is fading away after a job completes. */
-    this.isFinishing = false;
+    /** The job whose leftover dirt is fading away after completing, or null. */
+    this.finishingJob = /** @type {string | null} */ (null);
+  }
+
+  /**
+   * The surfaces that belong to a job.
+   *
+   * @param {string} job
+   */
+  surfacesFor(job) {
+    return [...this.surfaces.values()].filter((surface) => surface.job === job);
   }
 
   /** @param {import('./CleanableSurface.js').CleanableSurface} surface */
@@ -83,6 +92,16 @@ export class CleaningSystem {
       radiusY: brush.radiusY * spread,
       angle: brush.angle,
     });
+    // On upright surfaces, some of it trickles down.
+    if (surface.down && Math.random() < settings.dripChance) {
+      const { down } = surface;
+      const sideways = (Math.random() - 0.5) * 2 * Math.max(brush.radiusX, brush.radiusY);
+      const start = { x: point.x - down.y * sideways, y: point.y + down.x * sideways };
+      const [shortest, longest] = settings.dripLength;
+      const length = surface.metersToTexels(shortest + Math.random() * (longest - shortest));
+      const width = surface.metersToTexels(settings.dripWidth);
+      surface.wetness.trickle(start, down, length, width, 1, 0.5);
+    }
     this.lastHit = { surface, point };
     return { removed, toughRemoved: mask.toughRemoved, resisted: mask.resistedTexels };
   }
@@ -93,14 +112,16 @@ export class CleaningSystem {
   }
 
   /**
-   * Fraction of all the dirt (across every surface) that has been cleaned, 0..1. Weighted by
-   * how dirty each spot started, like DirtMask.progress.
+   * Fraction of a job's dirt that has been cleaned, 0..1. Weighted by how dirty each spot
+   * started, like DirtMask.progress.
+   *
+   * @param {string} job
    */
-  get progress() {
+  progressFor(job) {
     let dirtyWeight = 0;
     let cleanedWeight = 0;
     let allClean = true;
-    for (const { mask } of this.surfaces.values()) {
+    for (const { mask } of this.surfacesFor(job)) {
       dirtyWeight += mask.dirtyWeight;
       cleanedWeight += mask.cleanedWeight;
       if (mask.cleanedCount !== mask.dirtyCount) allClean = false;
@@ -110,31 +131,46 @@ export class CleaningSystem {
 
   /** @param {number} dt Seconds since the previous frame. */
   update(dt) {
-    if (this.isFinishing) {
-      // Fade out every leftover speck together; stop once nothing is left.
+    if (this.finishingJob) {
+      // Fade out every leftover speck of the job together; stop once nothing is left.
       let removed = 0;
       const amount = dt / config.job.finishFadeTime;
-      for (const { mask } of this.surfaces.values()) removed += mask.fadeAll(amount);
-      if (removed === 0) this.isFinishing = false;
+      for (const { mask } of this.surfacesFor(this.finishingJob)) removed += mask.fadeAll(amount);
+      if (removed === 0) this.finishingJob = null;
     }
     // Dry every surface a little and send any changes to the GPU.
     for (const surface of this.surfaces.values()) surface.update(dt);
   }
 
-  /** Starts the finishing flourish: all remaining dirt fades away over a moment. */
-  finishRemaining() {
-    this.isFinishing = true;
+  /**
+   * Starts the finishing flourish: all of a job's remaining dirt fades away over a moment.
+   *
+   * @param {string} job
+   */
+  finishRemaining(job) {
+    this.finishingJob = job;
   }
 
-  /** @param {number} amount 0..1: how strongly to highlight the dirt that's left. */
-  setHighlight(amount) {
-    for (const surface of this.surfaces.values()) surface.plugin.highlight = amount;
+  /**
+   * Highlights the dirt left on one job's surfaces (and none elsewhere).
+   *
+   * @param {number} amount 0..1: how strongly.
+   * @param {string} job
+   */
+  setHighlight(amount, job) {
+    for (const surface of this.surfaces.values()) {
+      surface.plugin.highlight = surface.job === job ? amount : 0;
+    }
   }
 
-  /** Puts all the dirt back, for another go. */
-  reset() {
-    this.isFinishing = false;
+  /**
+   * Puts a job's dirt back, for another go.
+   *
+   * @param {string} job
+   */
+  reset(job) {
+    if (this.finishingJob === job) this.finishingJob = null;
     this.lastHit = null;
-    for (const surface of this.surfaces.values()) surface.fillWithStartingDirt();
+    for (const surface of this.surfacesFor(job)) surface.fillWithStartingDirt();
   }
 }

@@ -63,6 +63,9 @@ export const config = {
     moss: { minStrength: 0.7, rate: 0.6 },
     mossColors: { light: '#86913f', dark: '#3d5122' },
     wetSpread: 1.3, // the wet patch is this much wider than the cleaning spot
+    dripChance: 0.5, // on upright surfaces: chance per frame of a trickle running down
+    dripLength: [0.35, 1.1], // trickle length range, meters
+    dripWidth: 0.055, // meters
     dryTime: 8, // seconds for a soaked spot to dry completely
     wetDarkening: 0.62, // wet surfaces are multiplied by this (1 = no darkening)
   },
