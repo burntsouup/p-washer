@@ -6,7 +6,7 @@ A small, satisfying 3D pressure-washing game. Walk up to something dirty, blast 
 enjoy the before/after. Built with [Babylon.js](https://www.babylonjs.com/) and plain
 JavaScript.
 
-**Status:** v0.2 (awaiting playtest): two jobs, a driveway, then a fence and patio out back,
+**Status:** v0.2: two jobs, a driveway, then a fence and patio out back,
 with stubborn moss and a flat-fan spray you can turn. See [docs/ROADMAP.md](docs/ROADMAP.md) for
 what's done and next.
 
