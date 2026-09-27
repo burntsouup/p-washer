@@ -1,6 +1,12 @@
 import { config } from '../config.js';
 
 /**
+ * @typedef {{ removed: number, toughRemoved: number, resisted: number }} SprayResult
+ *   removed: all dirt removed; toughRemoved: the part that was tough dirt (moss);
+ *   resisted: how many tough texels the spray was too weak to lift.
+ */
+
+/**
  * Knows every cleanable surface and applies spray hits to them.
  *
  * The pressure washer raycasts into the scene and hands the hit to `spray()`. This class
@@ -26,26 +32,28 @@ export class CleaningSystem {
    * @param {import('@babylonjs/core').PickingInfo | null} hit Where the spray landed.
    * @param {number} dt Seconds since the previous frame.
    * @param {{ radius: number, strength: number }} spray Spot radius in meters; strength 0..1.
-   * @returns {number} How much dirt came off this frame (0 if it missed every surface).
+   * @returns {SprayResult} What happened this frame (all zero if it missed every surface).
    */
   spray(hit, dt, { radius, strength }) {
     const surface = hit?.hit && hit.pickedMesh ? this.surfaces.get(hit.pickedMesh) : undefined;
     const uv = surface ? hit?.getTextureCoordinates() : null;
     if (!surface || !uv) {
       this.lastHit = null; // the stroke is broken; don't draw a line across the gap
-      return 0;
+      return { removed: 0, toughRemoved: 0, resisted: 0 };
     }
 
     const settings = config.cleaning;
     const point = surface.uvToTexel(uv.x, uv.y);
     const from = this.lastHit?.surface === surface ? this.lastHit.point : point;
     const brush = { radius: surface.metersToTexels(radius), hardness: settings.brushHardness };
-    const amount = settings.cleanRate * strength * dt;
-    const removed = surface.mask.scrubStroke(from, point, amount, brush);
+    const { mask } = surface;
+    mask.toughRemoved = 0;
+    mask.resistedTexels = 0;
+    const removed = mask.scrubStroke(from, point, settings.cleanRate * dt, brush, strength);
     // Water spreads a little beyond where it cleans.
     surface.wetness.soakStroke(from, point, brush.radius * settings.wetSpread);
     this.lastHit = { surface, point };
-    return removed;
+    return { removed, toughRemoved: mask.toughRemoved, resisted: mask.resistedTexels };
   }
 
   /** Call when the spray stops, so the next spray starts a fresh stroke. */

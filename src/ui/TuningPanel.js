@@ -49,6 +49,8 @@ export class TuningPanel {
     cleaning.add(config.cleaning, 'wetSpread', 1, 2.5, 0.05).name('Wet patch size');
     cleaning.add(config.cleaning, 'dryTime', 1, 30, 0.5).name('Drying time (s)');
     cleaning.add(config.cleaning, 'wetDarkening', 0.3, 1, 0.01).name('Wet darkness');
+    cleaning.add(config.cleaning.moss, 'minStrength', 0, 0.95, 0.05).name('Moss: min strength');
+    cleaning.add(config.cleaning.moss, 'rate', 0.1, 1.5, 0.05).name('Moss: removal speed');
     cleaning
       .add(config.job, 'completeAt', 0.9, 1, 0.005)
       .name('Job done at')

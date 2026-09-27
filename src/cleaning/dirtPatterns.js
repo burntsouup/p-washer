@@ -1,9 +1,14 @@
 // @ts-check
+import { DIRT_TYPE } from './DirtMask.js';
 import { createRandom, createValueNoise, fractalNoise, smoothstep } from './noise.js';
 
 /**
- * Procedural starting dirt. Each pattern is a function of position in METERS (not texels),
- * so it looks the same whatever texture resolution we pick.
+ * Procedural starting dirt. Each pattern works in METERS (not texels), so it looks the same
+ * whatever texture resolution we pick, and gives two things at every point:
+ * - dirtAt(x, y): how dirty it is (0..1)
+ * - typeAt(x, y): what kind of dirt it is (a DIRT_TYPE, e.g. grime or moss)
+ *
+ * @typedef {{ dirtAt: (x: number, y: number) => number, typeAt: (x: number, y: number) => number }} DirtPattern
  */
 
 /** The four dirt levels from the design. Cleaning time scales with the amount of dirt. */
@@ -15,10 +20,12 @@ export const DIRT_LEVELS = { light: 0.25, dirty: 0.5, heavy: 0.75, extreme: 1 };
  * - dirty: two tire tracks running the length of the driveway
  * - heavy: grime built up along the edges, worst in the corners
  * - extreme: a few oil stains near the garage, where the car parks
+ * - moss (tough): in the expansion joint across the middle, and along the lawn edges in the
+ *   shadier half near the garage
  *
  * @param {{ width: number, length: number, seed: number }} options
  *   width across, length from the street (y = 0) to the garage (y = length), in meters.
- * @returns {(x: number, y: number) => number} Dirt (0..1) at a point in meters.
+ * @returns {DirtPattern}
  */
 export function drivewayDirt({ width, length, seed }) {
   const random = createRandom(seed);
@@ -33,7 +40,10 @@ export function drivewayDirt({ width, length, seed }) {
     radius: 0.3 + random() * 0.3,
   }));
 
-  return (x, y) => {
+  const jointY = length / 2; // a control joint (a cut line in the concrete) across the middle
+
+  /** @param {number} x @param {number} y */
+  const sample = (x, y) => {
     const blotches = fractalNoise(noise, x * 0.7, y * 0.7, 4); // ~1.5 m blobs with detail
     // Fine speckle. Rotating the coordinates hides the noise's underlying square grid.
     const grain = fractalNoise(noise, (x * 0.8 - y * 0.6) * 7 + 100, (x * 0.6 + y * 0.8) * 7, 2);
@@ -68,6 +78,42 @@ export function drivewayDirt({ width, length, seed }) {
       dirt = Math.max(dirt, core * extreme, halo * (heavy - 0.05));
     }
 
-    return Math.min(1, Math.max(0, dirt));
+    // The joint collects grime along its whole length.
+    const inJoint = 1 - smoothstep(0.012, 0.03, Math.abs(y - jointY));
+    dirt = Math.max(dirt, inJoint * (dirty + 0.15));
+
+    // Moss: clumps growing out of the joint, and along the lawn edges in the shadier
+    // garage-end half. Clumps have ragged edges (fine noise) so they read as growth.
+    const ragged = 0.8 + 0.4 * noise(x * 9 + 500, y * 9 + 500);
+    const nearJoint = 1 - smoothstep(0.03, 0.14 * ragged, Math.abs(y - jointY));
+    const jointMoss = nearJoint * smoothstep(0.4, 0.55, noise(x * 2.5 + 300, 7));
+    const edgeBand = 1 - smoothstep(0.12, 0.5 * ragged, fromEdgeX);
+    const shade = smoothstep(length * 0.3, length * 0.75, y);
+    const patches = smoothstep(0.4, 0.55, fractalNoise(noise, x * 2 + 400, y * 2 + 400, 3));
+    const moss = Math.max(jointMoss, edgeBand * shade * patches);
+    const mossDirt = moss * (0.68 + grain * 0.22);
+    const isMoss = mossDirt > 0.3 && mossDirt >= dirt;
+    if (isMoss) dirt = mossDirt;
+
+    return {
+      dirt: Math.min(1, Math.max(0, dirt)),
+      type: isMoss ? DIRT_TYPE.moss : DIRT_TYPE.grime,
+    };
   };
+
+  // fill() asks for dirt, then type, at each point in turn, so remember the last point to
+  // avoid computing everything twice.
+  let lastX = NaN;
+  let lastY = NaN;
+  let last = { dirt: 0, type: DIRT_TYPE.grime };
+  /** @param {number} x @param {number} y */
+  const at = (x, y) => {
+    if (x !== lastX || y !== lastY) {
+      last = sample(x, y);
+      lastX = x;
+      lastY = y;
+    }
+    return last;
+  };
+  return { dirtAt: (x, y) => at(x, y).dirt, typeAt: (x, y) => at(x, y).type };
 }

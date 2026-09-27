@@ -1,6 +1,6 @@
 import { Constants, RawTexture, Texture } from '@babylonjs/core';
 import { config } from '../config.js';
-import { DirtMask } from './DirtMask.js';
+import { DIRT_TYPE, DirtMask } from './DirtMask.js';
 import { DirtMaterialPlugin } from './DirtMaterialPlugin.js';
 import { gridSize, texelCenterInMeters, uvToTexel } from './surfaceMath.js';
 import { WetnessMap } from './WetnessMap.js';
@@ -16,28 +16,30 @@ export class CleanableSurface {
    *   mesh: import('@babylonjs/core').Mesh,
    *   width: number,
    *   length: number,
-   *   dirtAt: (x: number, y: number) => number,
-   * }} definition Size in meters, and the starting dirt at a point in meters.
+   *   dirt: import('./dirtPatterns.js').DirtPattern,
+   * }} definition Size in meters, and the starting dirt (amount and type) in meters.
    */
-  constructor(scene, { mesh, width, length, dirtAt }) {
+  constructor(scene, { mesh, width, length, dirt }) {
     this.mesh = mesh;
     this.width = width;
     this.length = length;
-    this.dirtAt = dirtAt;
+    this.pattern = dirt;
     this.grid = gridSize(width, length, config.cleaning.texelsPerMeter);
     this.texelsPerMeter = this.grid.width / width; // actual, after rounding to whole texels
 
     this.mask = new DirtMask(this.grid.width, this.grid.height);
+    // Grime comes off with any spray; moss follows config (by reference, so it's live-tunable).
+    this.mask.typeRules = [{ minStrength: 0, rate: 1 }, config.cleaning.moss];
     this.wetness = new WetnessMap(this.grid.width, this.grid.height);
     this.fillWithStartingDirt();
 
-    // Two bytes per texel: red = dirt, green = wetness (0..255 each).
-    this.pixels = new Uint8Array(this.grid.width * this.grid.height * 2);
+    // Four bytes per texel: red = dirt, green = wetness, blue = moss (0..255 each), alpha unused.
+    this.pixels = new Uint8Array(this.grid.width * this.grid.height * 4);
     this.texture = new RawTexture(
       this.pixels,
       this.grid.width,
       this.grid.height,
-      Constants.TEXTUREFORMAT_RG,
+      Constants.TEXTUREFORMAT_RGBA,
       scene,
       true, // mipmaps: smaller copies that keep the dirt from shimmering at a distance
       false, // row 0 of the data is v = 0, same as the grids
@@ -57,10 +59,18 @@ export class CleanableSurface {
 
   /** Makes the surface as dirty (and dry) as it was at the start, for another go. */
   fillWithStartingDirt() {
-    this.mask.fill((x, y) => {
-      const point = texelCenterInMeters(x, y, this.grid, this.width, this.length);
-      return this.dirtAt(point.x, point.y);
-    });
+    /** @param {number} x @param {number} y */
+    const meters = (x, y) => texelCenterInMeters(x, y, this.grid, this.width, this.length);
+    this.mask.fill(
+      (x, y) => {
+        const point = meters(x, y);
+        return this.pattern.dirtAt(point.x, point.y);
+      },
+      (x, y) => {
+        const point = meters(x, y);
+        return this.pattern.typeAt(point.x, point.y);
+      },
+    );
     this.wetness.dryCompletely();
   }
 
@@ -88,12 +98,13 @@ export class CleanableSurface {
     const dirtChanged = this.mask.takeChanges();
     const wetChanged = this.wetness.takeChanges();
     if (!dirtChanged && !wetChanged) return;
-    const { dirt } = this.mask;
+    const { dirt, type } = this.mask;
     const { wetness } = this.wetness;
     const { pixels } = this;
     for (let i = 0; i < dirt.length; i++) {
-      pixels[i * 2] = Math.round(dirt[i] * 255);
-      pixels[i * 2 + 1] = Math.round(wetness[i] * 255);
+      pixels[i * 4] = Math.round(dirt[i] * 255);
+      pixels[i * 4 + 1] = Math.round(wetness[i] * 255);
+      pixels[i * 4 + 2] = type[i] === DIRT_TYPE.moss ? 255 : 0;
     }
     this.texture.update(pixels);
   }

@@ -68,6 +68,9 @@ export class SprayEffects {
       power: [1.5, 3.5],
       gravity: GRAVITY,
     });
+    // Splatter colors for plain grime, and for moss (tinted in between by how much is moss).
+    this.grimeSplatter = [this.splatter.color1.clone(), this.splatter.color2.clone()];
+    this.mossSplatter = [new Color4(0.3, 0.4, 0.15, 1), new Color4(0.42, 0.5, 0.22, 0.9)];
     for (const system of [this.splash, this.mist, this.splatter]) {
       system.emitter = this.impactPoint;
       system.start();
@@ -86,9 +89,11 @@ export class SprayEffects {
    *   strength: number,
    *   hitNormal: Vector3 | null,
    *   dirtRate: number,
-   * }} spray hitNormal is null when the water didn't hit anything.
+   *   mossShare: number,
+   * }} spray hitNormal is null when the water didn't hit anything; mossShare is how much of
+   *   the dirt coming off is moss (0..1).
    */
-  show({ nozzle, direction, distance, radius, strength, hitNormal, dirtRate }) {
+  show({ nozzle, direction, distance, radius, strength, hitNormal, dirtRate, mossShare }) {
     const settings = config.effects;
 
     // Beam: a flat fan, wide sideways and thin vertically, wobbling slightly.
@@ -120,6 +125,8 @@ export class SprayEffects {
     this.splatter.emitRate = hitting
       ? Math.min(settings.maxSplatterRate, dirtRate * settings.splatterPerDirt)
       : 0;
+    Color4.LerpToRef(this.grimeSplatter[0], this.mossSplatter[0], mossShare, this.splatter.color1);
+    Color4.LerpToRef(this.grimeSplatter[1], this.mossSplatter[1], mossShare, this.splatter.color2);
   }
 
   hide() {

@@ -12,6 +12,8 @@ const MIN_AIM_DISTANCE = 0.6;
 const GRIP_OFFSET = { right: 0.28, up: 1.15, forward: 0.22 };
 /** How far the gun tips down when you're just carrying it, in radians. */
 const RELAXED_DROOP = 0.6;
+/** Show the "get closer" hint after moss has resisted the spray for this long (seconds). */
+const MOSS_HINT_DELAY = 0.35;
 
 /**
  * The pressure washer: a machine you walk up to, a spray gun you carry, and the water.
@@ -56,6 +58,10 @@ export class PressureWasher {
     this.prompt = /** @type {string | null} */ (null);
     /** Dirt removed per second right now, for splatter and sound. */
     this.dirtRate = 0;
+    /** How much of the dirt coming off is moss (0..1), to tint the splatter. */
+    this.mossShare = 0;
+    /** Seconds the spray has been hitting moss without lifting it. */
+    this.mossResistTime = 0;
     this.time = 0;
 
     // Reused every frame to avoid creating garbage.
@@ -84,6 +90,7 @@ export class PressureWasher {
     this.positionWand(wantsToSpray);
     if (wantsToSpray) this.spray(dt);
     else this.stopSpraying();
+    this.prompt = this.mossResistTime > MOSS_HINT_DELAY ? 'Moss is tough: get closer' : null;
   }
 
   /** Before pickup: glow and show a prompt when the player is close enough. */
@@ -158,9 +165,15 @@ export class PressureWasher {
     const distance = landed && hit ? hit.distance : settings.maxRange;
     const { radius, strength } = sprayAtDistance(distance, settings);
 
-    const removed = landed ? this.cleaning.spray(hit, dt, { radius, strength }) : 0;
+    const result = landed
+      ? this.cleaning.spray(hit, dt, { radius, strength })
+      : { removed: 0, toughRemoved: 0, resisted: 0 };
     if (!landed) this.cleaning.stopSpraying();
-    this.dirtRate = dt > 0 ? removed / dt : 0;
+    this.dirtRate = dt > 0 ? result.removed / dt : 0;
+    this.mossShare = result.removed > 0 ? result.toughRemoved / result.removed : 0;
+    // Hitting moss that isn't coming off? Time to suggest getting closer.
+    const mossStuck = result.resisted > 0 && result.toughRemoved < result.resisted * 0.001;
+    this.mossResistTime = mossStuck ? this.mossResistTime + dt : 0;
     this.isSpraying = true;
     this.isHitting = landed;
     this.sprayStrength = landed ? strength : 0;
@@ -173,6 +186,7 @@ export class PressureWasher {
       strength,
       hitNormal: landed && hit ? hit.getNormal(true) : null,
       dirtRate: this.dirtRate,
+      mossShare: this.mossShare,
     });
   }
 
@@ -182,6 +196,8 @@ export class PressureWasher {
     this.isHitting = false;
     this.sprayStrength = 0;
     this.dirtRate = 0;
+    this.mossShare = 0;
+    this.mossResistTime = 0;
     this.effects.hide();
     this.cleaning.stopSpraying();
   }
